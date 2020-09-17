@@ -1,0 +1,213 @@
+<!DOCTYPE HTML>
+<!--
+    animated.html
+
+        Interactive demonstration on how a closed path is calculated and plotted
+-->
+<!--
+ *  This file is part of ccbc, Closed Continuous Bézier Curves.
+ *  Copyright (C) 2020, xyzzy@rockingship.org
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<title>Manipulating a closed B&eacute;zier path by coordinates</title>
+	<script src="MooTools-Core-1.6.0.js" type="text/javascript"></script>
+	<script src="animated.js" type="text/javascript"></script>
+	<style type="text/css">
+		body {
+			font-family: Verdana, Geneva, sans-serif;
+		}
+		h1 {
+			text-align: center;
+		}
+		h3 {
+			text-align: center;
+		}
+		svg {
+			background-color: #00000000; /* NOTE: alpha=0 */
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+		canvas {
+			position: absolute;
+			z-index: -1;
+		}
+	</style>
+</head>
+<body>
+<h1>Manipulating a closed B&eacute;zier path by coordinates</h1>
+<h3>Eliminating control points</h3>
+<p><a href="index5.html">Example</a> with 5 points path, <a href="index10.html">Example</a> with 10 points path, <a href="minusOne.html">Example</a> fitting smaller curve</p>
+<p>Interactive demonstration on how a closed path is calculated and plotted.</p>
+<p>Move the black dots on the blue line with your mouse/finger.</p>
+
+<div id="wrapper">
+	<canvas id="animated"></canvas>
+	<svg id="svg" width="500px" height="500px">
+		<ellipse id="dot1" ry="10" rx="10" stroke="none" fill="#000"></ellipse>
+		<ellipse id="dot2" ry="10" rx="10" stroke="none" fill="#000"></ellipse>
+		<ellipse id="dot3" ry="10" rx="10" stroke="none" fill="#000"></ellipse>
+		<ellipse id="dot4" ry="10" rx="10" stroke="none" fill="#000"></ellipse>
+		<ellipse id="dot5" ry="10" rx="10" stroke="none" fill="#000"></ellipse>
+	</svg>
+</div>
+<div id="txt"></div>
+
+<script type="text/javascript">
+	window.addEvent('domready', function () {
+		// get size of SVG
+		let svg = document.id("svg");
+		let rect = svg.getBoundingClientRect();
+		let width = rect.width;
+		let height = rect.height;
+
+		// calculate control points
+		let curve = new Curve();
+		curve.calc();
+
+		// load path points
+		document.id('txtA').set('text', JSON.encode(curve.A));
+		document.id('txtB').set('text', JSON.encode(curve.B));
+
+		// create canvas
+		let canvas = document.id('animated');
+		canvas.width = width;
+		canvas.height = height;
+
+		// access graphics context
+		let context = canvas.getContext("2d");
+
+		// draw initial state
+		curve.draw(context, 0, width, height);
+
+		let x0 = 0, y0 = 0;
+		let elx = -1, ely = -1;
+		let curel = 0;
+
+		// get the dots
+		let dots = [document.id('dot1'), document.id('dot2'), document.id('dot3'), document.id('dot4'), document.id('dot5')];
+
+		// initial position
+		for (let i = 0; i < curve.A.length; i++) {
+			dots[i].set('cx', curve.A[i].x);
+			dots[i].set('cy', curve.A[i].y);
+		}
+
+		// attach mouse events
+		for (let i = 0; i < curve.A.length; i++) {
+			dots[i].addEvent('mousedown', function (event) {
+				event.stop();
+				x0 = event.client.x;
+				y0 = event.client.y;
+				elx = this.get('cx') * 1;
+				ely = this.get('cy') * 1;
+				curel = this;
+			});
+			dots[i].addEvent('mousemove', function (event) {
+				if (curel != 0) {
+					let x = elx + event.client.x - x0;
+					let y = ely + event.client.y - y0;
+					if (x < 0) x = 0;
+					if (y < 0) y = 0;
+					if (x >= width) x = width - 1;
+					if (y >= height) y = height - 1;
+					curve.A[i].x = x;
+					curve.A[i].y = y;
+					this.set('cx', x);
+					this.set('cy', y);
+					curve.calc();
+					document.id('txtA').set('text', JSON.encode(curve.A));
+					document.id('txtB').set('text', JSON.encode(curve.B));
+				}
+			});
+			dots[i].addEvent('mouseup', function (event) {
+				curel = 0;
+			});
+			dots[i].addEvent('touchstart', function (event) {
+				this.fireEvent('mousedown', event);
+			});
+			dots[i].addEvent('touchmove', function (event) {
+				this.fireEvent('mousemove', event);
+			});
+			dots[i].addEvent('touchend', function (event) {
+				this.fireEvent('mouseup', event);
+			});
+		}
+
+		// 20fps = 50ms interval timer for animation
+		let t = 0;
+		setInterval(function () {
+			t += 50;
+			curve.draw(context, t / 5000, width, height);
+			t %= 5000;
+		}, 50);
+
+		// container mousemove handler (in case mouse moves outside dot during gesture)
+		document.id('svg').addEvent('mousemove', function (event) {
+			if (curel != 0)
+				curel.fireEvent('mousemove', event);
+		});
+		document.id('svg').addEvent('mouseup', function (event) {
+			curel = 0;
+		});
+		document.id('svg').addEvent('touchmove', function (event) {
+			this.fireEvent('mousemove', event);
+		});
+		document.id('svg').addEvent('touchend', function (event) {
+			this.fireEvent('mouseup', event);
+		});
+	});
+</script>
+
+<pre>
+// array of points that lie on the Bezier path
+let A = <span id="txtA"></span>;
+// resulting control points conveniently located here
+//  B = <span id="txtB"></span>;
+
+// coefficients for a 5 point closed path
+let c0 =  3.0/11.0;
+let c1 = -1.0/11.0;
+let c2 =  1.0/11.0;
+let c3 = -3.0/11.0;
+let c4 =  1;
+
+// calculate first control point
+let B = [
+  { x: A[1].x*c0 + A[2].x*c1 + A[3].x*c2 + A[4].x*c3 + A[0].x*c4 ,
+    y: A[1].y*c0 + A[2].y*c1 + A[3].y*c2 + A[4].y*c3 + A[0].y*c4 },
+  { x: A[2].x*c0 + A[3].x*c1 + A[4].x*c2 + A[0].x*c3 + A[1].x*c4 ,
+    y: A[2].y*c0 + A[3].y*c1 + A[4].y*c2 + A[0].y*c3 + A[1].y*c4 },
+  { x: A[3].x*c0 + A[4].x*c1 + A[0].x*c2 + A[1].x*c3 + A[2].x*c4 ,
+    y: A[3].y*c0 + A[4].y*c1 + A[0].y*c2 + A[1].y*c3 + A[2].y*c4 },
+  { x: A[4].x*c0 + A[0].x*c1 + A[1].x*c2 + A[2].x*c3 + A[3].x*c4 ,
+    y: A[4].y*c0 + A[0].y*c1 + A[1].y*c2 + A[2].y*c3 + A[3].y*c4 },
+  { x: A[0].x*c0 + A[1].x*c1 + A[2].x*c2 + A[3].x*c3 + A[4].x*c4 ,
+    y: A[0].y*c0 + A[1].y*c1 + A[2].y*c2 + A[3].y*c3 + A[4].y*c4 } ];
+
+// optionally mirror to second control point
+for (let i = 0; i < 5; i++) {
+  C[i] = { x: 2 * A[(i + 1) % 5].x - B[(i + 1) % 5].x,
+           y: 2 * A[(i + 1) % 5].y - B[(i + 1) % 5].y };
+}
+</pre>
+
+</body>
+</html>
