@@ -1,14 +1,19 @@
 # Welcome to Closed Continuous Bézier Curves (recalculated).
 
 This repo is a mess because it is preliminary.
-Collecting and constructing materials, documentation, and samples.
+Collecting and constructing materials, documentation and samples.
 
 A continuous Bézier curve is a composite curve (multiple consecutive smaller curves) that at the seams share an identical first and second derivatives.
-The general issue is that implementations consider it "open", meaning that the smaller curves are independent/non-connected.
-Control points are machine generated and far from intuitive.
-Attempts to manually change the curve usually end in distorting the whole.
+The general issue is that implementations consider it "open", meaning that the sections of the curves are independent/non-connected.
+Control points are mostly machine generated and far from intuitive.
+Attempts to manually change the curve usually ends in distorting the whole.
 
-Sample:
+This project takes a new approach to Bezier curves considering all sections connected (closed curve).
+Maths drastically simplify, creating B/C control points for plotting is a linear function (instead of matrix solving).
+Intuitive human/curve interaction, control points are no longer off-curve but are actually located on the curve.
+Ultra high speed plotting allows for real-time fitting of curves onto contours (represented as a vector of coordinates).
+
+Samples:
 
 [![Animated](docs/animated.gif)](https://RockingShip.github.io/ccbc/animated.html)
 
