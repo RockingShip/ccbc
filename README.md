@@ -10,7 +10,9 @@ Attempts to manually change the curve usually end in distorting the whole.
 
 Sample:
 
-[![Foo](animated.gif)](https://RockingShip.github.io/ccbc/animated.html)
+[![](animated.gif)](https://RockingShip.github.io/ccbc/animated.html)
+
+[![](resize.png)](https://RockingShip.github.io/ccbc/resize.html)
 
 # Requirements
 
