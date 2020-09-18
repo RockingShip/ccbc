@@ -557,7 +557,7 @@ function Bezier() {
 	this.segI = [];		// starting fragment of contour segment
 	this.segDir = [];	// when updating the segment/fragment mapping, which direction do the segments move
 	this.segLen = [];	// length of segment
-	this.maxRatio = 1.5;	// adjacent segments may not exceed this length difference
+	this.maxRatio = 1.2;	// adjacent segments may not exceed this length difference
 
 	this.compareUpdateControls = function() {
 		const AX = this.AX;

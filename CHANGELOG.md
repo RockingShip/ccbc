@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-18 11:49:03 Improeved `tester-compare` and gh-page background.
 2020-09-18 01:47:17 Theme gh-pages.
 2020-09-17 23:31:11 Added `docs/resize.*` unfinished implementation of dynamic composite curve with slider.
 2020-09-17 23:19:55 Added `tester-compare.*`.
