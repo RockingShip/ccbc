@@ -1,0 +1,199 @@
+<!DOCTYPE HTML>
+<!--
+    compare.html
+
+        Interactive demonstration of a 10 point bezier curve with a 9 point bezier trying to fit
+-->
+<!--
+ *  This file is part of ccbc, Closed Continuous Bézier Curves.
+ *  Copyright (C) 2020, xyzzy@rockingship.org
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<title>Compare between Bezier curve and coordinate vector</title>
+	<script src="MooTools-Core-1.6.0.js" type="text/javascript"></script>
+	<script src="MooTools-More-1.6.0.js" type="text/javascript"></script>
+	<script src="compare.js" type="text/javascript"></script>
+	<style type="text/css">
+		body {
+			font-family: Verdana, Geneva, sans-serif;
+		}
+		h1 {
+			text-align: center;
+		}
+		h3 {
+			text-align: center;
+		}
+		div {
+			position: relative;
+		}
+		svg {
+			background-color: #00000000; /* NOTE: alpha=0 */
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+		canvas {
+			position: absolute;
+			z-index: -1;
+		}
+	</style>
+</head>
+<body>
+<h3>Illustrating <code>compare()</code> between a Bezier curve and a coordinate vector</h3>
+
+<p>You have control over a 10 point red bezier through the large red pads.</p>
+<p>A 9 point blue bezier will try to follow you.</p>
+<p>You can move multiple pads at the same time.</p>
+
+<div id="wrapper">
+	<canvas id="animated"></canvas>
+	<svg id="svg" width="500px" height="500px"></svg>
+</div>
+<div id="txt"></div>
+<div id="txt2"></div>
+<div id="txt3"></div>
+
+<pre>
+// curve control points
+let userAX = <span id="userAX"></span>;
+let userAY = <span id="userAY"></span>;
+let followAX = <span id="followAX"></span>;
+let followAY = <span id="followAY"></span>;
+</pre>
+
+<script type="text/javascript">
+
+	window.addEvent("domready", function () {
+
+		/*
+		 * Create UI
+		 */
+
+		// get size of SVG
+		let svg = document.id("svg");
+		let rect = svg.getBoundingClientRect();
+		let width = rect.width;
+		let height = rect.height;
+
+		// create canvas
+		let canvas = document.id("animated");
+		canvas.width = width;
+		canvas.height = height;
+
+		// access graphics context
+		let ctx = canvas.getContext("2d");
+
+		/*
+		 * Create user bezier curve
+		 */
+		let userCurve = new Curve();
+		userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
+		userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
+
+		// display path points
+		document.id("userAX").set("text", JSON.encode(userCurve.AX));
+		document.id("userAY").set("text", JSON.encode(userCurve.AY));
+
+		/*
+		 * Create smaller fitting bezier curve
+		 */
+		let shadowCurve = new Curve();
+		shadowCurve.AX.length = 0;
+		shadowCurve.AY.length = 0;
+		shadowCurve.BX.length = 0;
+		shadowCurve.BY.length = 0;
+		shadowCurve.CX.length = 0;
+		shadowCurve.CY.length = 0;
+		for (let j=0,k=0; j<userCurve.AX.length; j++) {
+			// skip 4th control
+			if (j !== 4) {
+				shadowCurve.AX[k] = userCurve.AX[j];
+				shadowCurve.AY[k] = userCurve.AY[j];
+				k++;
+			}
+		}
+		// determine initial control points
+		shadowCurve.calcControlsClosed(shadowCurve.AX, shadowCurve.BX, shadowCurve.CX);
+		shadowCurve.calcControlsClosed(shadowCurve.AY, shadowCurve.BY, shadowCurve.CY);
+
+		// capture contour user and inject into shadow
+		let controlLength = userCurve.calcControlLength(); // determine control net length
+		userCurve.captureContour(controlLength/6, shadowCurve.contourX, shadowCurve.contourY);
+
+		// initial compare contour/curve
+		shadowCurve.compareInit(shadowCurve.contourX.length * 8, shadowCurve.contourX, shadowCurve.contourY);
+		shadowCurve.compareBalance();
+
+		shadowCurve.totalError = shadowCurve.compare();
+
+		// erase canvas
+		ctx.fillStyle = "#eee"
+		ctx.fillRect(0, 0, width, height);
+		shadowCurve.draw(ctx);
+
+		shadowCurve.pt = 0;
+		shadowCurve.changed = 0;
+		shadowCurve.width = width;
+		shadowCurve.height = height;
+
+		window.userCurve = userCurve;
+		window.shadowCurve = shadowCurve;
+
+		window.dots = new Dots(svg, ctx, userCurve, shadowCurve);
+		window.dots.updateDots(userCurve.AX, userCurve.AY);
+		window.frameNr = 0;
+
+		let myTick = function() {
+			let delay = 0;
+			let ms = Date.now();
+			let ret = shadowCurve.tick();
+
+			// update stats
+			document.id("txt").set("text", "err=" + shadowCurve.totalError + " numCompare=" + shadowCurve.numCompare);
+
+			if (ret === 0) {
+				// nothing changed
+				document.id("txt2").set("text", "B" + (Date.now() - ms));
+				delay = 500;
+			} else if (ret === 1) {
+				// call again
+				document.id("txt2").set("text", "A" + (Date.now() - ms));
+				delay = 0;
+			} else {
+				// draw frame
+				ctx.fillStyle = "#eee"
+				ctx.fillRect(0, 0, width, height);
+				shadowCurve.draw(ctx);
+
+				document.id("followAX").set("text", JSON.encode(shadowCurve.AX));
+				document.id("followAY").set("text", JSON.encode(shadowCurve.AY));
+
+				// next frame
+				window.frameNr++;
+				delay = 1000/25; // 25fps
+			}
+			setTimeout(myTick, delay);
+		};
+		setTimeout(myTick, 0);
+	});
+</script>
+
+</body>
+</html>

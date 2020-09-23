@@ -196,6 +196,6 @@ if (typeof window === 'undefined') {
 		curve.draw(ctx, t / 100, width, height);
 		// save
 		let buffer = canvas.toBuffer('image/png')
-		fs.writeFileSync('./test-' + Math.trunc(t / 10) + (t % 10) + '.png', buffer)
+		fs.writeFileSync('animated-' + Math.trunc(t / 10) + (t % 10) + '.png', buffer)
 	}
 }
