@@ -13,7 +13,7 @@ Maths drastically simplify, creating B/C control points for plotting is a linear
 Intuitive human/curve interaction, control points are no longer off-curve but are actually located on the curve.
 Ultra high speed plotting allows for real-time fitting of curves onto contours (represented as a vector of coordinates).
 
-Samples:
+Samples: (Click image to open interactive version)
 
 [![Animated](docs/animated.gif)](https://RockingShip.github.io/ccbc/animated.html)
 Basic bezier with on-curve control points.
