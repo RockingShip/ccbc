@@ -101,58 +101,20 @@ let followAY = <span id="followAY"></span>;
 		// access graphics context
 		let ctx = canvas.getContext("2d");
 
-		/*
-		 * Create user bezier curve
-		 */
 		let userCurve = new Curve();
-		userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
-		userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
+		let followCurve = new Curve();
+		setup(userCurve, followCurve, width, height);
 
-		// display path points
+		// display initial path points
 		document.id("userAX").set("text", JSON.encode(userCurve.AX));
 		document.id("userAY").set("text", JSON.encode(userCurve.AY));
+		document.id("followAX").set("text", JSON.encode(followCurve.AX));
+		document.id("followAY").set("text", JSON.encode(followCurve.AY));
 
-		/*
-		 * Create smaller fitting bezier curve
-		 */
-		let followCurve = new Curve();
-		followCurve.AX.length = 0;
-		followCurve.AY.length = 0;
-		followCurve.BX.length = 0;
-		followCurve.BY.length = 0;
-		followCurve.CX.length = 0;
-		followCurve.CY.length = 0;
-		for (let j=0,k=0; j<userCurve.AX.length; j++) {
-			// skip 4th control
-			if (j !== 4) {
-				followCurve.AX[k] = userCurve.AX[j];
-				followCurve.AY[k] = userCurve.AY[j];
-				k++;
-			}
-		}
-		// determine initial control points
-		followCurve.calcControlsClosed(followCurve.AX, followCurve.BX, followCurve.CX);
-		followCurve.calcControlsClosed(followCurve.AY, followCurve.BY, followCurve.CY);
-
-		// capture contour user and inject into follow
-		let controlLength = userCurve.calcControlLength(); // determine control net length
-		userCurve.captureContour(controlLength/6, followCurve.contourX, followCurve.contourY);
-
-		// initial compare contour/curve
-		followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
-		followCurve.compareBalance();
-
-		followCurve.totalError = followCurve.compare();
-
-		// erase canvas
+		// draw followCurve
 		ctx.fillStyle = "#eee"
 		ctx.fillRect(0, 0, width, height);
 		followCurve.draw(ctx);
-
-		followCurve.pt = 0;
-		followCurve.changed = 0;
-		followCurve.width = width;
-		followCurve.height = height;
 
 		window.userCurve = userCurve;
 		window.followCurve = followCurve;
@@ -181,23 +143,32 @@ let followAY = <span id="followAY"></span>;
 		window.pads.updatePads(userCurve.AX, userCurve.AY);
 		window.frameNr = 0;
 
+		// worker queue
 		let myTick = function() {
 			let delay = 0;
 			let ms = Date.now();
+
+			// update on-curve controls for better fit
 			let ret = followCurve.tick();
 
 			// update stats
-			document.id("txt").set("text", "err=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
+			document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
 
-			if (ret === 0) {
-				// nothing changed
-				document.id("txt2").set("text", "B" + (Date.now() - ms));
-				delay = 500;
-			} else if (ret === 1) {
+			if (ret) {
 				// call again
 				document.id("txt2").set("text", "A" + (Date.now() - ms));
 				delay = 0;
 			} else {
+				// nothing changed
+				document.id("txt2").set("text", "B" + (Date.now() - ms));
+				delay = 500;
+			}
+			setTimeout(myTick, delay);
+		};
+		setTimeout(myTick, 0);
+
+		// inverval timer for animation
+		setInterval(function(){
 				// draw frame
 				ctx.fillStyle = "#eee"
 				ctx.fillRect(0, 0, width, height);
@@ -208,11 +179,7 @@ let followAY = <span id="followAY"></span>;
 
 				// next frame
 				window.frameNr++;
-				delay = 1000/25; // 25fps
-			}
-			setTimeout(myTick, delay);
-		};
-		setTimeout(myTick, 0);
+		}, 1000/25);
 	});
 </script>
 

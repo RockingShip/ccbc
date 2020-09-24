@@ -28,11 +28,11 @@ Number.prototype.pad = function (size) {
 
 function Curve() {
 
-	this.AX = [303, 159, 470, 183, 320, 287, 64, 317, 35, 227];
-	this.AY = [465, 205, 255, 311, 18, 313, 71, 199, 359, 141];
-	this.BX = [];
+	this.AX = [];		// on-curve control points
+	this.AY = [];
+	this.BX = [];		// off-curve control points
 	this.BY = [];
-	this.CX = [];
+	this.CX = [];		// off-curve mirrored control point
 	this.CY = [];
 	this.rgb = [];		// colour palette
 	this.dt = 0;		// `dt` used for forward/reverse coefficients
@@ -913,20 +913,30 @@ function Curve() {
 		// wrap
 		this.pt = 0;
 
-		if (!this.changed)
-			return 0; // nothing changed
-
+		if (this.changed) {
 		this.changed = 0;
-		return 2; // frame
+			return 2; // call again, frame complete
+		}
+
+		return 0; // nothing changed
 	};
 
 }
 
-function setup(userCurve, followCurve) {
+function setup(userCurve, followCurve, width, height) {
 
-	/*
-	 * Create user bezier curve
-	 */
+	const initialAX = [0.605,0.317,0.933,0.365,0.645,0.573,0.133,0.633,0.069,0.453];
+	const initialAY = [0.955,0.435,0.531,0.647,0.035,0.651,0.167,0.423,0.743,0.307];
+
+	// set initial coordinates
+	userCurve.AX.length = 0;
+	userCurve.AY.length = 0;
+	for (let i=0; i<initialAX.length; i++) {
+		userCurve.AX.push(Math.round(initialAX[i] * width));
+		userCurve.AY.push(Math.round(initialAY[i] * height));
+	}
+
+	// set initial control points
 	userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
 	userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
 
@@ -935,10 +945,6 @@ function setup(userCurve, followCurve) {
 	 */
 	followCurve.AX.length = 0;
 	followCurve.AY.length = 0;
-	followCurve.BX.length = 0;
-	followCurve.BY.length = 0;
-	followCurve.CX.length = 0;
-	followCurve.CY.length = 0;
 	for (let j = 0; j < userCurve.AX.length; j++) {
 		// skip 4th control
 		if (j !== 4) {
@@ -977,7 +983,7 @@ if (typeof window === "undefined") {
 	let userCurve = new Curve();
 	let followCurve = new Curve();
 
-	setup(userCurve, followCurve);
+	setup(userCurve, followCurve, width, height);
 
 	followCurve.width = width;
 	followCurve.height = height;
