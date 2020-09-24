@@ -99,8 +99,9 @@ function Curve() {
 		for (let i = 0; i < N; i++) {
 			ctx.moveTo(AX[i], AY[i]);
 			ctx.arc(AX[i], AY[i], radius, 0, 2 * Math.PI);
+			ctx.moveTo(AX[i], AY[i]);
 		}
-		ctx.fill();
+		ctx.stroke();
 	}
 
 	/*
@@ -275,7 +276,7 @@ function Curve() {
 	 * Capture contour
 	 * Walk the contour and save coordinates after every integer unit distance
 	 */
-	this.captureContour = function (numFragments, contourX, contourY) {
+	this.captureContour = function (numContour, contourX, contourY) {
 		const AX = this.AX;
 		const AY = this.AY;
 		const BX = this.BX;
@@ -285,7 +286,7 @@ function Curve() {
 		const N = AX.length;
 
 		// determine `dt`
-		let dt = 1 / numFragments; // `dt` for complete composite curve
+		let dt = 1 / numContour; // `dt` for complete composite curve
 		dt *= N; // `dt` for a composite section
 
 		// erase arrays
@@ -833,7 +834,7 @@ function Curve() {
 		}
 
 		// validate balancer
-		if(0) {
+		if (0) {
 			// known issue:
 			for (let i = 0; i < sN - 1; i++) {
 				let iNext = (i + 1) % sN;
@@ -914,7 +915,7 @@ function Curve() {
 		this.pt = 0;
 
 		if (this.changed) {
-		this.changed = 0;
+			this.changed = 0;
 			return 2; // call again, frame complete
 		}
 
@@ -925,13 +926,13 @@ function Curve() {
 
 function setup(userCurve, followCurve, width, height) {
 
-	const initialAX = [0.605,0.317,0.933,0.365,0.645,0.573,0.133,0.633,0.069,0.453];
-	const initialAY = [0.955,0.435,0.531,0.647,0.035,0.651,0.167,0.423,0.743,0.307];
+	const initialAX = [0.605, 0.317, 0.933, 0.365, 0.645, 0.573, 0.133, 0.633, 0.069, 0.453];
+	const initialAY = [0.955, 0.435, 0.531, 0.647, 0.035, 0.651, 0.167, 0.423, 0.743, 0.307];
 
 	// set initial coordinates
 	userCurve.AX.length = 0;
 	userCurve.AY.length = 0;
-	for (let i=0; i<initialAX.length; i++) {
+	for (let i = 0; i < initialAX.length; i++) {
 		userCurve.AX.push(Math.round(initialAX[i] * width));
 		userCurve.AY.push(Math.round(initialAY[i] * height));
 	}
@@ -958,10 +959,10 @@ function setup(userCurve, followCurve, width, height) {
 
 	// capture contour user and inject into follow
 	let controlLength = userCurve.calcControlLength(); // determine control net length
-	userCurve.captureContour(controlLength / 6, followCurve.contourX, followCurve.contourY);
+	userCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
 
 	// initial compare contour/curve
-	followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
+	followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
 	followCurve.compareBalance();
 
 	followCurve.totalError = followCurve.compare();
@@ -990,7 +991,7 @@ if (typeof window === "undefined") {
 
 	let frameNr = 0;
 
-	for (; ;) {
+	for (let round = 0; round < 6;) {
 		let ret = followCurve.tick();
 
 		if (ret === 0) {
@@ -1023,15 +1024,16 @@ if (typeof window === "undefined") {
 			userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
 			userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
 			let controlLength = userCurve.calcControlLength();
-			userCurve.captureContour(controlLength / 6, followCurve.contourX, followCurve.contourY);
+			userCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
 
 			// initial compare contour/curve
-			followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
+			followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
 			followCurve.compareBalance();
 			followCurve.totalError = followCurve.compare();
 
 			// next frame
 			frameNr++;
+			round++;
 		}
 
 	}

@@ -116,11 +116,8 @@ let followAY = <span id="followAY"></span>;
 		ctx.fillRect(0, 0, width, height);
 		followCurve.draw(ctx);
 
-		window.userCurve = userCurve;
-		window.followCurve = followCurve;
-
 		// create user pads
-		window.pads = new Pads(svg, function(pt, x, y){
+		window.pads = new Pads(svg, function (pt, x, y) {
 			// update on-curve control point
 			userCurve.AX[pt] = x;
 			userCurve.AY[pt] = y;
@@ -144,7 +141,7 @@ let followAY = <span id="followAY"></span>;
 		window.frameNr = 0;
 
 		// worker queue
-		let myTick = function() {
+		let myTick = function () {
 			let delay = 0;
 			let ms = Date.now();
 
@@ -168,18 +165,18 @@ let followAY = <span id="followAY"></span>;
 		setTimeout(myTick, 0);
 
 		// inverval timer for animation
-		setInterval(function(){
-				// draw frame
-				ctx.fillStyle = "#eee"
-				ctx.fillRect(0, 0, width, height);
-				followCurve.draw(ctx);
+		setInterval(function () {
+			// draw frame
+			ctx.fillStyle = "#eee"
+			ctx.fillRect(0, 0, width, height);
+			followCurve.draw(ctx);
 
-				document.id("followAX").set("text", JSON.encode(followCurve.AX));
-				document.id("followAY").set("text", JSON.encode(followCurve.AY));
+			document.id("followAX").set("text", JSON.encode(followCurve.AX));
+			document.id("followAY").set("text", JSON.encode(followCurve.AY));
 
-				// next frame
-				window.frameNr++;
-		}, 1000/25);
+			// next frame
+			window.frameNr++;
+		}, 1000 / 25);
 	});
 </script>
 

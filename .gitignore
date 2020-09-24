@@ -1,6 +1,7 @@
 .backup/
 .deps/
 .idea/
+node_modules/
 
 todo.txt
 *.bak

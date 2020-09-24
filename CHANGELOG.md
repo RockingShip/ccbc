@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-24 13:22:46 Lost+Found.
 2020-09-24 13:17:29 Split `tick()` into event queue for calculations and interval for drawing.
 2020-09-24 13:10:22 Restructured `compare.js`, no code change.
 2020-09-24 13:04:27 Extract `pads.js` from `compare.js`.

@@ -96,8 +96,8 @@ function Pads(svg, onMove) {
 		 * Set initial positions
 		 */
 		for (let i = 0; i < newAX.length; i++) {
-			this.pads[i].set("cx", userCurve.AX[i]);
-			this.pads[i].set("cy", userCurve.AY[i]);
+			this.pads[i].set("cx", newAX[i]);
+			this.pads[i].set("cy", newAY[i]);
 		}
 
 		// attach mouse events
