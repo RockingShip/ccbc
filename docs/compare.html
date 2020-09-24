@@ -114,59 +114,59 @@ let followAY = <span id="followAY"></span>;
 		/*
 		 * Create smaller fitting bezier curve
 		 */
-		let shadowCurve = new Curve();
-		shadowCurve.AX.length = 0;
-		shadowCurve.AY.length = 0;
-		shadowCurve.BX.length = 0;
-		shadowCurve.BY.length = 0;
-		shadowCurve.CX.length = 0;
-		shadowCurve.CY.length = 0;
+		let followCurve = new Curve();
+		followCurve.AX.length = 0;
+		followCurve.AY.length = 0;
+		followCurve.BX.length = 0;
+		followCurve.BY.length = 0;
+		followCurve.CX.length = 0;
+		followCurve.CY.length = 0;
 		for (let j=0,k=0; j<userCurve.AX.length; j++) {
 			// skip 4th control
 			if (j !== 4) {
-				shadowCurve.AX[k] = userCurve.AX[j];
-				shadowCurve.AY[k] = userCurve.AY[j];
+				followCurve.AX[k] = userCurve.AX[j];
+				followCurve.AY[k] = userCurve.AY[j];
 				k++;
 			}
 		}
 		// determine initial control points
-		shadowCurve.calcControlsClosed(shadowCurve.AX, shadowCurve.BX, shadowCurve.CX);
-		shadowCurve.calcControlsClosed(shadowCurve.AY, shadowCurve.BY, shadowCurve.CY);
+		followCurve.calcControlsClosed(followCurve.AX, followCurve.BX, followCurve.CX);
+		followCurve.calcControlsClosed(followCurve.AY, followCurve.BY, followCurve.CY);
 
-		// capture contour user and inject into shadow
+		// capture contour user and inject into follow
 		let controlLength = userCurve.calcControlLength(); // determine control net length
-		userCurve.captureContour(controlLength/6, shadowCurve.contourX, shadowCurve.contourY);
+		userCurve.captureContour(controlLength/6, followCurve.contourX, followCurve.contourY);
 
 		// initial compare contour/curve
-		shadowCurve.compareInit(shadowCurve.contourX.length * 8, shadowCurve.contourX, shadowCurve.contourY);
-		shadowCurve.compareBalance();
+		followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
+		followCurve.compareBalance();
 
-		shadowCurve.totalError = shadowCurve.compare();
+		followCurve.totalError = followCurve.compare();
 
 		// erase canvas
 		ctx.fillStyle = "#eee"
 		ctx.fillRect(0, 0, width, height);
-		shadowCurve.draw(ctx);
+		followCurve.draw(ctx);
 
-		shadowCurve.pt = 0;
-		shadowCurve.changed = 0;
-		shadowCurve.width = width;
-		shadowCurve.height = height;
+		followCurve.pt = 0;
+		followCurve.changed = 0;
+		followCurve.width = width;
+		followCurve.height = height;
 
 		window.userCurve = userCurve;
-		window.shadowCurve = shadowCurve;
+		window.followCurve = followCurve;
 
-		window.dots = new Dots(svg, ctx, userCurve, shadowCurve);
+		window.dots = new Dots(svg, ctx, userCurve, followCurve);
 		window.dots.updateDots(userCurve.AX, userCurve.AY);
 		window.frameNr = 0;
 
 		let myTick = function() {
 			let delay = 0;
 			let ms = Date.now();
-			let ret = shadowCurve.tick();
+			let ret = followCurve.tick();
 
 			// update stats
-			document.id("txt").set("text", "err=" + shadowCurve.totalError + " numCompare=" + shadowCurve.numCompare);
+			document.id("txt").set("text", "err=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
 
 			if (ret === 0) {
 				// nothing changed
@@ -180,10 +180,10 @@ let followAY = <span id="followAY"></span>;
 				// draw frame
 				ctx.fillStyle = "#eee"
 				ctx.fillRect(0, 0, width, height);
-				shadowCurve.draw(ctx);
+				followCurve.draw(ctx);
 
-				document.id("followAX").set("text", JSON.encode(shadowCurve.AX));
-				document.id("followAY").set("text", JSON.encode(shadowCurve.AY));
+				document.id("followAX").set("text", JSON.encode(followCurve.AX));
+				document.id("followAY").set("text", JSON.encode(followCurve.AY));
 
 				// next frame
 				window.frameNr++;

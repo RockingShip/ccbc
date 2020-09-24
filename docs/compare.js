@@ -968,7 +968,7 @@ function Curve() {
 
 }
 
-function Dots(svg, ctx, userCurve, shadowCurve) {
+function Dots(svg, ctx, userCurve, followCurve) {
 
 	this.dots = [];
 
@@ -1004,12 +1004,12 @@ function Dots(svg, ctx, userCurve, shadowCurve) {
 			userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
 			userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
 			let controlLength = userCurve.calcControlLength();
-			userCurve.captureContour(controlLength / 6, shadowCurve.contourX, shadowCurve.contourY);
+			userCurve.captureContour(controlLength / 6, followCurve.contourX, followCurve.contourY);
 
 			// initial compare contour/curve
-			shadowCurve.compareInit(shadowCurve.contourX.length * 8, shadowCurve.contourX, shadowCurve.contourY);
-			shadowCurve.compareBalance();
-			shadowCurve.totalError = shadowCurve.compare();
+			followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
+			followCurve.compareBalance();
+			followCurve.totalError = followCurve.compare();
 
 			// update ui
 			document.id("userAX").set("text", JSON.encode(userCurve.AX));
@@ -1018,7 +1018,7 @@ function Dots(svg, ctx, userCurve, shadowCurve) {
 			// erase canvas
 			ctx.fillStyle = "#eee"
 			ctx.fillRect(0, 0, width, height);
-			shadowCurve.draw(ctx);
+			followCurve.draw(ctx);
 		}
 	});
 	document.body.addEvent("mouseup", function (event) {
@@ -1085,7 +1085,7 @@ function Dots(svg, ctx, userCurve, shadowCurve) {
 
 }
 
-function setup(userCurve, shadowCurve) {
+function setup(userCurve, followCurve) {
 
 	/*
 	 * Create user bezier curve
@@ -1096,32 +1096,32 @@ function setup(userCurve, shadowCurve) {
 	/*
 	 * Create smaller fitting bezier curve
 	 */
-	shadowCurve.AX.length = 0;
-	shadowCurve.AY.length = 0;
-	shadowCurve.BX.length = 0;
-	shadowCurve.BY.length = 0;
-	shadowCurve.CX.length = 0;
-	shadowCurve.CY.length = 0;
+	followCurve.AX.length = 0;
+	followCurve.AY.length = 0;
+	followCurve.BX.length = 0;
+	followCurve.BY.length = 0;
+	followCurve.CX.length = 0;
+	followCurve.CY.length = 0;
 	for (let j = 0; j < userCurve.AX.length; j++) {
 		// skip 4th control
 		if (j !== 4) {
-			shadowCurve.AX.push(userCurve.AX[j]);
-			shadowCurve.AY.push(userCurve.AY[j]);
+			followCurve.AX.push(userCurve.AX[j]);
+			followCurve.AY.push(userCurve.AY[j]);
 		}
 	}
 	// determine initial control points
-	shadowCurve.calcControlsClosed(shadowCurve.AX, shadowCurve.BX, shadowCurve.CX);
-	shadowCurve.calcControlsClosed(shadowCurve.AY, shadowCurve.BY, shadowCurve.CY);
+	followCurve.calcControlsClosed(followCurve.AX, followCurve.BX, followCurve.CX);
+	followCurve.calcControlsClosed(followCurve.AY, followCurve.BY, followCurve.CY);
 
-	// capture contour user and inject into shadow
+	// capture contour user and inject into follow
 	let controlLength = userCurve.calcControlLength(); // determine control net length
-	userCurve.captureContour(controlLength / 6, shadowCurve.contourX, shadowCurve.contourY);
+	userCurve.captureContour(controlLength / 6, followCurve.contourX, followCurve.contourY);
 
 	// initial compare contour/curve
-	shadowCurve.compareInit(shadowCurve.contourX.length * 8, shadowCurve.contourX, shadowCurve.contourY);
-	shadowCurve.compareBalance();
+	followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
+	followCurve.compareBalance();
 
-	shadowCurve.totalError = shadowCurve.compare();
+	followCurve.totalError = followCurve.compare();
 }
 
 if (typeof window === "undefined") {
@@ -1138,17 +1138,17 @@ if (typeof window === "undefined") {
 	let ctx = canvas.getContext("2d")
 
 	let userCurve = new Curve();
-	let shadowCurve = new Curve();
+	let followCurve = new Curve();
 
-	setup(userCurve, shadowCurve);
+	setup(userCurve, followCurve);
 
-	shadowCurve.width = width;
-	shadowCurve.height = height;
+	followCurve.width = width;
+	followCurve.height = height;
 
 	let frameNr = 0;
 
 	for (; ;) {
-		let ret = shadowCurve.tick();
+		let ret = followCurve.tick();
 
 		if (ret === 0) {
 			// nothing changed
@@ -1160,7 +1160,7 @@ if (typeof window === "undefined") {
 			// draw frame
 			ctx.fillStyle = "#eee"
 			ctx.fillRect(0, 0, width, height);
-			shadowCurve.draw(ctx);
+			followCurve.draw(ctx);
 			userCurve.drawCurvePoints(ctx, 10, "#f00");
 
 			// document.id("followAX").set("text", JSON.encode(this.AX));
@@ -1189,12 +1189,12 @@ if (typeof window === "undefined") {
 			userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
 			userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
 			let controlLength = userCurve.calcControlLength();
-			userCurve.captureContour(controlLength / 6, shadowCurve.contourX, shadowCurve.contourY);
+			userCurve.captureContour(controlLength / 6, followCurve.contourX, followCurve.contourY);
 
 			// initial compare contour/curve
-			shadowCurve.compareInit(shadowCurve.contourX.length * 8, shadowCurve.contourX, shadowCurve.contourY);
-			shadowCurve.compareBalance();
-			shadowCurve.totalError = shadowCurve.compare();
+			followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
+			followCurve.compareBalance();
+			followCurve.totalError = followCurve.compare();
 
 			// update ui
 			// document.id("userAX").set("text", JSON.encode(userCurve.AX));

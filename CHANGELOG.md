@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-24 12:39:15 Renamed `shadow` into `follow`, no code change.
 2020-09-23 14:19:19 Added `docs/compare.*`.
 2020-09-18 11:49:03 Improved `tester-compare` and gh-page background.
 2020-09-18 01:47:17 Theme gh-pages.
