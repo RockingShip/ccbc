@@ -28,6 +28,7 @@
 	<script src="MooTools-Core-1.6.0.js" type="text/javascript"></script>
 	<script src="MooTools-More-1.6.0.js" type="text/javascript"></script>
 	<script src="compare.js" type="text/javascript"></script>
+	<script src="pads.js" type="text/javascript"></script>
 	<style type="text/css">
 		body {
 			font-family: Verdana, Geneva, sans-serif;
@@ -156,8 +157,28 @@ let followAY = <span id="followAY"></span>;
 		window.userCurve = userCurve;
 		window.followCurve = followCurve;
 
-		window.dots = new Dots(svg, ctx, userCurve, followCurve);
-		window.dots.updateDots(userCurve.AX, userCurve.AY);
+		// create user pads
+		window.pads = new Pads(svg, function(pt, x, y){
+			// update on-curve control point
+			userCurve.AX[pt] = x;
+			userCurve.AY[pt] = y;
+
+			// apply change to contour
+			userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
+			userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
+			let controlLength = userCurve.calcControlLength();
+			userCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
+
+			// initial compare contour/curve
+			followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
+			followCurve.compareBalance();
+			followCurve.totalError = followCurve.compare();
+
+			// update ui
+			document.id("userAX").set("text", JSON.encode(userCurve.AX));
+			document.id("userAY").set("text", JSON.encode(userCurve.AY));
+		});
+		window.pads.updatePads(userCurve.AX, userCurve.AY);
 		window.frameNr = 0;
 
 		let myTick = function() {

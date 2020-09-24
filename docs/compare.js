@@ -210,6 +210,11 @@ function Curve() {
 	this.radius = 1;	// current radius to test alternative control locations
 	this.maxRadius = 2;	// maximum radius
 	this.frameNr = 0;	// current frame number
+	// settings
+	this.maxRatio = 1.18;	// adjacent segments may not exceed this distance difference
+	this.maxRadius = 3;	// maximum radius
+	this.ratioContour = 1.0 / 6.0; // density controlNetLength:numContour for `captureContour()` -- used to determine number of contours
+	this.ratioCompare = 8.0 / 1.0; // density numContour:numFragment for `compareInit()` -- used to determine # curve fragments per contour segment
 
 	this.drawCompare = function (ctx) {
 		const contourX = this.contourX;
@@ -965,123 +970,6 @@ function Curve() {
 		this.changed = 0;
 		return 2; // frame
 	};
-
-}
-
-function Dots(svg, ctx, userCurve, followCurve) {
-
-	this.dots = [];
-
-	let width = ctx.canvas.clientWidth;
-	let height = ctx.canvas.clientHeight;
-	let x0 = 0;
-	let y0 = 0;
-	let elx = undefined;
-	let ely = undefined;
-	let curel = undefined;
-
-	document.body.addEvent("mousemove", function (event) {
-		if (typeof curel !== "undefined") {
-			let x = elx + event.client.x - x0;
-			let y = ely + event.client.y - y0;
-			if (x < 0) x = 0;
-			if (y < 0) y = 0;
-			if (x >= width) x = width - 1;
-			if (y >= height) y = height - 1;
-
-			// extract index from id
-			let i = parseInt(curel.id.substring(3));
-
-			// save position in curve
-			userCurve.AX[i] = x;
-			userCurve.AY[i] = y;
-
-			// position element
-			curel.set("cx", x);
-			curel.set("cy", y);
-
-			// prepare curve
-			userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
-			userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
-			let controlLength = userCurve.calcControlLength();
-			userCurve.captureContour(controlLength / 6, followCurve.contourX, followCurve.contourY);
-
-			// initial compare contour/curve
-			followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
-			followCurve.compareBalance();
-			followCurve.totalError = followCurve.compare();
-
-			// update ui
-			document.id("userAX").set("text", JSON.encode(userCurve.AX));
-			document.id("userAY").set("text", JSON.encode(userCurve.AY));
-
-			// erase canvas
-			ctx.fillStyle = "#eee"
-			ctx.fillRect(0, 0, width, height);
-			followCurve.draw(ctx);
-		}
-	});
-	document.body.addEvent("mouseup", function (event) {
-		curel = undefined;
-	});
-	document.body.addEvent("touchmove", function (event) {
-		this.fireEvent("mousemove", event);
-	});
-	document.body.addEvent("touchend", function (event) {
-		this.fireEvent("mouseup", event);
-	});
-
-	this.updateDots = function (newAX, newAY) {
-
-		/*
-		 * Remove excess dots
-		 */
-		while (this.dots.length > newAX.length) {
-			let dot = this.dots.pop();
-			dot.removeEvents();
-			dot.remove();
-		}
-
-		/*
-		 * create new dots
-		 */
-		while (this.dots.length < newAX.length) {
-			let dot = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
-
-			dot.setAttributeNS(null, "id", "dot" + this.dots.length);
-			dot.setAttributeNS(null, "rx", "10");
-			dot.setAttributeNS(null, "ry", "10");
-			dot.setAttributeNS(null, "stroke", "none");
-			dot.setAttributeNS(null, "fill", "#f00");
-
-			svg.appendChild(dot);
-
-			this.dots[this.dots.length] = dot;
-		}
-
-		/*
-		 * Set initial positions
-		 */
-		for (let i = 0; i < newAX.length; i++) {
-			this.dots[i].set("cx", userCurve.AX[i]);
-			this.dots[i].set("cy", userCurve.AY[i]);
-		}
-
-		// attach mouse events
-		for (let i = 0; i < newAX.length; i++) {
-			this.dots[i].addEvent("mousedown", function (event) {
-				event.stop();
-				x0 = event.client.x;
-				y0 = event.client.y;
-				elx = this.get("cx") * 1;
-				ely = this.get("cy") * 1;
-				curel = this;
-			});
-			this.dots[i].addEvent("touchstart", function (event) {
-				this.fireEvent("mousedown", event);
-			});
-		}
-	}
 
 }
 
