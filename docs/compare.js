@@ -34,7 +34,38 @@ function Curve() {
 	this.BY = [];
 	this.CX = [];
 	this.CY = [];
-	this.rgb = [];
+	this.rgb = [];		// colour palette
+	this.dt = 0;		// `dt` used for forward/reverse coefficients
+	this.FCOEF2X = [];	// when moving `t` forward
+	this.FCOEF2Y = [];
+	this.FCOEF1X = [];
+	this.FCOEF1Y = [];
+	this.FCOEF0X = [];
+	this.FCOEF0Y = [];
+	this.RCOEF2X = [];	// when moving `t` reverse
+	this.RCOEF2Y = [];
+	this.RCOEF1X = [];
+	this.RCOEF1Y = [];
+	this.RCOEF0X = [];
+	this.RCOEF0Y = [];
+	this.contourX = [];	// contour coordinate vector to apply `compare()` to
+	this.contourY = [];
+	this.fragLen = [];	// length of curve fragment
+	this.fragX = [];	// starting x/y of curve fragment
+	this.fragY = [];
+	this.segI = [];		// starting fragment of contour segment
+	this.segDir = [];	// when updating the segment/fragment mapping, which direction do the segments move
+	this.segLen = [];	// length of segment
+	this.numCompare = 0;	// # times `compare()` is called
+	this.totalError = 0;	// total length of all curve/contour mapping lines
+	this.changed = 0;	// some curve points changed
+	this.pt = 0;		// current control point being updated
+	this.radius = 1;	// current radius to test alternative control locations
+	// settings
+	this.maxRatio = 1.18;	// adjacent segments may not exceed this distance difference
+	this.maxRadius = 3;	// maximum radius
+	this.ratioContour = 1.0 / 6.0; // density controlNetLength:numContour for `captureContour()` -- used to determine number of contours
+	this.ratioCompare = 8.0 / 1.0; // density numContour:numFragment for `compareInit()` -- used to determine # curve fragments per contour segment
 
 	/*
 	 * Create a rgb gradient palette
@@ -116,6 +147,9 @@ function Curve() {
 		ctx.stroke();
 	};
 
+	/*
+	 * Draw contour coordinate vector
+	 */
 	this.drawContour = function (ctx, contourX, contourY, colour) {
 		ctx.beginPath();
 		ctx.strokeStyle = colour;
@@ -124,6 +158,40 @@ function Curve() {
 			ctx.fillRect(contourX[i] - 1, contourY[i] - 1, 2, 2);
 		ctx.stroke();
 	};
+
+	/*
+	 * Draw contour/curve mapping
+	 */
+	this.drawCompare = function (ctx) {
+		const contourX = this.contourX;
+		const contourY = this.contourY;
+		const segI = this.segI;
+		const segLen = this.segLen;
+		const sN = segLen.length;
+
+		for (let i = 0; i < sN; i++) {
+			// draw line. each stoke has its own colour
+			ctx.beginPath();
+			ctx.strokeStyle = this.rgb[i % 256];
+			ctx.fillStyle = this.rgb[i % 256];
+			ctx.lineWidth = 1;
+			ctx.moveTo(contourX[i], contourY[i]);
+			ctx.lineTo(this.fragX[segI[i]], this.fragY[segI[i]]);
+			ctx.stroke();
+		}
+	}
+
+	/*
+	 * Draw complete frame
+	 */
+	this.draw = function (ctx) {
+		// draw initial state
+		this.drawCompare(ctx);
+		this.drawContour(ctx, this.contourX, this.contourY, "#f00");
+		this.drawCurvePoints(ctx, 2, "#00f");
+		this.drawCurve(ctx, "#00f");
+		// curve.drawHints(ctx, "#0f0");
+	}
 
 	/*
 	 * Create coefficients and determine B/C for a Closed Continuous Bezier Curve
@@ -171,80 +239,6 @@ function Curve() {
 	};
 
 	/*
-	 * State information for progressive `compare()`
-	 */
-
-	// loop unrolled coefficients for curve plotting
-	this.dt = 0;		// `dt` used to create unroll data
-	this.FCOEF2X = [];	// when moving `t` forward
-	this.FCOEF2Y = [];
-	this.FCOEF1X = [];
-	this.FCOEF1Y = [];
-	this.FCOEF0X = [];
-	this.FCOEF0Y = [];
-	this.RCOEF2X = [];	// when moving `t` reverse
-	this.RCOEF2Y = [];
-	this.RCOEF1X = [];
-	this.RCOEF1Y = [];
-	this.RCOEF0X = [];
-	this.RCOEF0Y = [];
-	// contour coordinate vector
-	this.contourX = [];	// contour coordinate vector to apply `compare()` to
-	this.contourY = [];
-	// curve fragments, one for each dt
-	this.fragLen = [];	// length of curve fragment
-	this.fragX = [];	// starting x/y of curve fragment
-	this.fragY = [];
-	// contour segments, one for each contour coordinate
-	this.segI = [];		// starting fragment of contour segment
-	this.segDir = [];	// when updating the segment/fragment mapping, which direction do the segments move
-	this.segLen = [];	// length of segment
-
-	this.maxRatio = 1.18;	// adjacent segments may not exceed this distance difference
-	// this.maxRatio = 1.2;	// adjacent segments may not exceed this length difference
-
-	this.numCompare = 0;	// # times `compare()` is called
-	this.totalError = 0;	// total length of all curve/contour mapping lines
-	this.changed = 0;
-	this.pt = 0;		// current control point being updated
-	this.radius = 1;	// current radius to test alternative control locations
-	this.maxRadius = 2;	// maximum radius
-	this.frameNr = 0;	// current frame number
-	// settings
-	this.maxRatio = 1.18;	// adjacent segments may not exceed this distance difference
-	this.maxRadius = 3;	// maximum radius
-	this.ratioContour = 1.0 / 6.0; // density controlNetLength:numContour for `captureContour()` -- used to determine number of contours
-	this.ratioCompare = 8.0 / 1.0; // density numContour:numFragment for `compareInit()` -- used to determine # curve fragments per contour segment
-
-	this.drawCompare = function (ctx) {
-		const contourX = this.contourX;
-		const contourY = this.contourY;
-		const segI = this.segI;
-		const segLen = this.segLen;
-		const sN = segLen.length;
-
-		for (let i = 0; i < sN; i++) {
-			// draw line. each stoke has its own colour
-			ctx.beginPath();
-			ctx.strokeStyle = this.rgb[i % 256];
-			ctx.fillStyle = this.rgb[i % 256];
-			ctx.lineWidth = 1;
-			ctx.moveTo(contourX[i], contourY[i]);
-			ctx.lineTo(this.fragX[segI[i]], this.fragY[segI[i]]);
-			ctx.stroke();
-		}
-	}
-
-	this.draw = function (ctx) {
-		// draw initial state
-		this.drawCompare(ctx);
-		this.drawContour(ctx, this.contourX, this.contourY, "#f00");
-		this.drawCurvePoints(ctx, 2, "#00f");
-		this.drawCurve(ctx, "#00f");
-		// curve.drawHints(ctx, "#0f0");
-	}
-
-	/*
 	 * Perform a fast and rough approximation of the control net length
 	 */
 	this.calcControlLength = function () {
@@ -275,50 +269,6 @@ function Curve() {
 		}
 
 		return controlLength;
-	}
-
-	/*
-	 * Perform a fast and rough approximation of the  length
-	 */
-	this.calcContourLength = function (dt) {
-		const AX = this.AX;
-		const AY = this.AY;
-		const BX = this.BX;
-		const BY = this.BY;
-		const CX = this.CX;
-		const CY = this.CY;
-		const N = AX.length;
-
-		/*
-		 * Walk the path
-		 */
-		let contourLength = 0;
-
-		for (let i = 0; i < N; i++) {
-
-			const iPlus1 = (i + 1) % N;
-			const COEF2X = AX[i] * (-3 * dt) + BX[i] * (9 * dt) + CX[i] * (-9 * dt) + AX[iPlus1] * (3 * dt);
-			const COEF2Y = AY[i] * (-3 * dt) + BY[i] * (9 * dt) + CY[i] * (-9 * dt) + AY[iPlus1] * (3 * dt);
-			const COEF1X = AX[i] * (6 * dt - 3 * dt * dt) + BX[i] * (-12 * dt + 9 * dt * dt) + CX[i] * (6 * dt - 9 * dt * dt) + AX[iPlus1] * (3 * dt * dt);
-			const COEF1Y = AY[i] * (6 * dt - 3 * dt * dt) + BY[i] * (-12 * dt + 9 * dt * dt) + CY[i] * (6 * dt - 9 * dt * dt) + AY[iPlus1] * (3 * dt * dt);
-			const COEF0X = AX[i] * (-3 * dt + 3 * dt * dt - dt * dt * dt) + BX[i] * (3 * dt - 6 * dt * dt + 3 * dt * dt * dt) + CX[i] * (3 * dt * dt - 3 * dt * dt * dt) + AX[iPlus1] * (dt * dt * dt);
-			const COEF0Y = AY[i] * (-3 * dt + 3 * dt * dt - dt * dt * dt) + BY[i] * (3 * dt - 6 * dt * dt + 3 * dt * dt * dt) + CY[i] * (3 * dt * dt - 3 * dt * dt * dt) + AY[iPlus1] * (dt * dt * dt);
-
-			for (let t = 0, x = AX[i], y = AY[i]; t < 1; t += dt) {
-
-				// Determine step increments
-				const dx = COEF2X * t * t + COEF1X * t + COEF0X;
-				const dy = COEF2Y * t * t + COEF1Y * t + COEF0Y;
-
-				// add length
-				contourLength += Math.sqrt(dx * dx + dy * dy);
-
-				x += dx;
-				y += dy;
-			}
-		}
-
-		return contourLength;
 	}
 
 	/*
@@ -454,6 +404,10 @@ function Curve() {
 		const AY = this.AY;
 		const bN = AX.length; // number of bezier sections
 		const sN = contourX.length; // number of contour segments
+		const fragLen = this.fragLen;
+		const segI = this.segI;
+		const segLen = this.segLen;
+		const segDir = this.segDir;
 
 		// determine `dt`
 		this.dt = 1 / numFragments; // `dt` for complete composite curve
@@ -490,11 +444,6 @@ function Curve() {
 		this.segI.length = sN;
 		this.segDir.length = sN;
 		this.segLen.length = sN;
-
-		const fragLen = this.fragLen;
-		const segI = this.segI;
-		const segLen = this.segLen;
-		const segDir = this.segDir;
 
 		// initial mapping
 		for (let i = 0; i < sN; i++) {
@@ -1040,19 +989,14 @@ if (typeof window === "undefined") {
 
 		if (ret === 0) {
 			// nothing changed
-			// document.id("txt2").set("text", "B" + (Date.now() - ms));
 		} else if (ret === 1) {
 			// call again
-			// document.id("txt2").set("text", "A" + (Date.now() - ms));
 		} else {
 			// draw frame
 			ctx.fillStyle = "#eee"
 			ctx.fillRect(0, 0, width, height);
 			followCurve.draw(ctx);
 			userCurve.drawCurvePoints(ctx, 10, "#f00");
-
-			// document.id("followAX").set("text", JSON.encode(this.AX));
-			// document.id("followAY").set("text", JSON.encode(this.AY));
 
 			let buffer = canvas.toBuffer("image/png")
 			fs.writeFileSync("compare-" + frameNr.pad(3) + ".png", buffer)
@@ -1065,10 +1009,6 @@ if (typeof window === "undefined") {
 			// reset frame# for every cycle
 			if (frameNr >= 60)
 				frameNr = -1;
-
-			// position element
-			// window.dots.dots[2].set("cx", x);
-			// window.dots.dots[2].set("cy", y);
 
 			userCurve.AX[2] = x;
 			userCurve.AY[2] = y;
@@ -1083,10 +1023,6 @@ if (typeof window === "undefined") {
 			followCurve.compareInit(followCurve.contourX.length * 8, followCurve.contourX, followCurve.contourY);
 			followCurve.compareBalance();
 			followCurve.totalError = followCurve.compare();
-
-			// update ui
-			// document.id("userAX").set("text", JSON.encode(userCurve.AX));
-			// document.id("userAY").set("text", JSON.encode(userCurve.AY));
 
 			// next frame
 			frameNr++;
