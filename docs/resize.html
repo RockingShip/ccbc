@@ -302,26 +302,31 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * worker queue
 		 */
+		let numTicks = 0;
 		let myTick = function () {
 			let delay = 0;
+			const ms = Date.now();
 
-			if (!slider.isDragging) {
-				delay = 500; // only fit contour when dragging
-			} else {
-				// update on-curve controls for better fit
-				let ret = followCurve.tick();
-
-				// update stats
-				document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
-
-				if (ret) {
-					// call again
-					delay = 0;
+			do {
+				if (!slider.isDragging) {
+					delay = 500; // only fit contour when dragging
 				} else {
-					// nothing changed
-					delay = 500;
+					// update on-curve controls for better fit
+					let ret = followCurve.tick();
+					numTicks++;
+
+					// update stats
+					document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
+
+					if (ret) {
+						// call again
+						delay = 0;
+					} else {
+						// nothing changed
+						delay = 500;
+					}
 				}
-			}
+			} while (Date.now() - ms < 10);
 			setTimeout(myTick, delay);
 		};
 		setTimeout(myTick, 0);
