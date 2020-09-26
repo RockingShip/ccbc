@@ -63,7 +63,7 @@ function Curve() {
 	this.pt = 0;		// current control point being updated
 	this.radius = 1;	// current radius to test alternative control locations
 	// settings
-	this.maxRatio = 1.5;	// adjacent segments may not exceed this distance difference
+	this.maxRatio = 1.2;	// adjacent segments may not exceed this distance difference
 	this.maxRadius = 3;	// maximum radius
 	this.ratioContour = 1.0 / 6.0; // density controlNetLength:numContour for `captureContour()` -- used to determine number of contours
 	this.ratioCompare = 8.0 / 1.0; // density numContour:numFragment for `compareInit()` -- used to determine # curve fragments per contour segment
@@ -460,15 +460,15 @@ function Curve() {
 		this.updateControls();
 
 		// validate segment length
-		for (let i = 0; i < segI.length; i++) {
-			const iPlus1 = (i + 1) % segI.length;
+		for (let i = 0; i < sN; i++) {
+			const iPlus1 = (i + 1) % sN;
 
 			let len = 0;
 			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
 				len += fragLen[k];
 
 			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR1A: " + i + " " + (len - segLen[i]));
+				console.log("ERROR1: " + i + " " + (len - segLen[i]));
 		}
 
 	}
@@ -494,6 +494,7 @@ function Curve() {
 		const segLen = this.segLen;
 		const maxRatio = this.maxRatio;
 		const sN = segLen.length;
+		const fN = fragLen.length;
 
 		this.numCompare++;
 
@@ -506,7 +507,7 @@ function Curve() {
 				len += fragLen[k];
 
 			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR1C: " + i + " " + (len - segLen[i]));
+				console.log("ERROR2: " + i + " " + (len - segLen[i]));
 		}
 
 
@@ -529,9 +530,9 @@ function Curve() {
 				const iNextNext = (iNext + 1) % sN; // next contour segment after next
 
 				const jFirstCurr = segI[iCurr]; // first fragment of current segment
-				const jSecondCurr = (jFirstCurr + 1) % fragLen.length; // second fragment of current segment
+				const jSecondCurr = (jFirstCurr + 1) % fN; // second fragment of current segment
 				const jFirstNext = segI[iNext]; // first fragment of next segment
-				const jLastCurr = (jFirstNext - 1 + fragLen.length) % fragLen.length; // last fragment of current segment
+				const jLastCurr = (jFirstNext - 1 + fN) % fN; // last fragment of current segment
 
 				// calculate error for LEADING(iCurr) seam
 				let dx = (contourX[iCurr] - fragX[jFirstCurr]);
@@ -628,11 +629,11 @@ function Curve() {
 			const iPlus1 = (i + 1) % sN;
 
 			let len = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
+			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fN)
 				len += fragLen[k];
 
 			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR1B: " + i + " " + (len - segLen[i]));
+				console.log("ERROR3: " + i + " " + (len - segLen[i]));
 		}
 
 		return totalError;
