@@ -982,6 +982,169 @@ function Curve() {
 	}
 
 	/*
+	 * Add control-points to a given level
+	 * visualPrecise, true=visual, false=precise
+	 */
+	this.increaseControls = function (newCount, visualPrecise) {
+		// walk sections
+		// for each section, remember halfway x+y
+		// return length
+		// overall longest is best choice
+		const AX = this.AX;
+		const AY = this.AY;
+
+		while (AX.length < newCount) {
+			const dt = this.dt;
+			const bN = AX.length;
+
+			let bestLen = 0, bestI, bestX, bestY;
+			let t, x, y;
+
+			// find best section and it's halfway point
+			for (let iSct = 0, k = 0; iSct < bN; iSct++) {
+				let sctLen = 0;
+				// first half
+				for (t = 0, x = AX[iSct], y = AY[iSct]; t < 0.5; t += dt, k++) {
+
+					// Determine step increments
+					const dx = this.FCOEF2X[iSct] * t * t + this.FCOEF1X[iSct] * t + this.FCOEF0X[iSct];
+					const dy = this.FCOEF2Y[iSct] * t * t + this.FCOEF1Y[iSct] * t + this.FCOEF0Y[iSct];
+
+					// add length
+					sctLen += Math.sqrt(dx * dx + dy * dy);
+
+					x += dx;
+					y += dy;
+				}
+
+				// remember halfway
+				let sctHalfX = Math.round(x);
+				let sctHalfY = Math.round(y);
+
+				// second half
+				for (t = 0.5, x = AX[iSct], y = AY[iSct]; t < 1; t += dt, k++) {
+
+					// Determine step increments
+					const dx = this.FCOEF2X[iSct] * t * t + this.FCOEF1X[iSct] * t + this.FCOEF0X[iSct];
+					const dy = this.FCOEF2Y[iSct] * t * t + this.FCOEF1Y[iSct] * t + this.FCOEF0Y[iSct];
+
+					// add length
+					sctLen += Math.sqrt(dx * dx + dy * dy);
+
+					x += dx;
+					y += dy;
+				}
+
+				/*
+				 * best choice is longest
+				 * visualPrecise==true = visual -> best = shortest segment (adding maximum stress)
+				 * visualPrecise==false = precise -> best = longest segment (adding minimum stress)
+				 */
+
+				if (iSct === 0 || (visualPrecise && sctLen < bestLen) || (!visualPrecise && sctLen > bestLen)) {
+					bestLen = sctLen;
+					bestI = iSct;
+					bestX = sctHalfX;
+					bestY = sctHalfY;
+				}
+			}
+
+			// insert best after bestI
+			this.AX.splice(bestI+1, 0, bestX);
+			this.AY.splice(bestI+1, 0, bestY);
+
+			// set initial control points
+			this.calcControlsClosed(this.AX, this.BX, this.CX);
+			this.calcControlsClosed(this.AY, this.BY, this.CY);
+
+			// initial compare contour/curve.
+			// NOTE: Need to call to update FCOEF
+			this.compareInit(this.contourX.length * this.ratioCompare, this.contourX, this.contourY);
+			this.compareBalance();
+			this.totalError = this.compare();
+		}
+	}
+
+	/*
+	 * Remove control-points to a given level
+	 * visualPrecise, true=visual, false=precise
+	 */
+	this.decreaseControls = function (newCount, visualPrecise) {
+		// walk sections
+		// for each section, remember halfway x+y
+		// return length
+		// overall longest is best choice
+		const AX = this.AX;
+		const AY = this.AY;
+
+		while (AX.length > newCount) {
+			const dt = this.dt;
+			const bN = AX.length;
+
+			let bestLen = 0, bestI, bestX, bestY;
+			let t, x, y;
+
+			// find best double section (this can be optimised)
+			for (let iSct = 0, k = 0; iSct < bN; iSct++) {
+				let sctLen = 0;
+				// first section
+				for (t = 0, x = AX[iSct], y = AY[iSct]; t < 1; t += dt, k++) {
+
+					// Determine step increments
+					const dx = this.FCOEF2X[iSct] * t * t + this.FCOEF1X[iSct] * t + this.FCOEF0X[iSct];
+					const dy = this.FCOEF2Y[iSct] * t * t + this.FCOEF1Y[iSct] * t + this.FCOEF0Y[iSct];
+
+					// add length
+					sctLen += Math.sqrt(dx * dx + dy * dy);
+
+					x += dx;
+					y += dy;
+				}
+
+				// second second
+				let iPlus1 = (iSct+1) % bN;
+				for (t = 0, x = AX[iPlus1], y = AY[iPlus1]; t < 1; t += dt, k++) {
+
+					// Determine step increments
+					const dx = this.FCOEF2X[iPlus1] * t * t + this.FCOEF1X[iPlus1] * t + this.FCOEF0X[iPlus1];
+					const dy = this.FCOEF2Y[iPlus1] * t * t + this.FCOEF1Y[iPlus1] * t + this.FCOEF0Y[iPlus1];
+
+					// add length
+					sctLen += Math.sqrt(dx * dx + dy * dy);
+
+					x += dx;
+					y += dy;
+				}
+
+				/*
+				 * best choice is longest
+				 * visualPrecise==true = visual -> best = shortest segment (adding maximum stress)
+				 * visualPrecise==false = precise -> best = longest segment (adding minimum stress)
+				 */
+
+				if (iSct === 0 || (!visualPrecise && sctLen < bestLen) || (!!visualPrecise && sctLen > bestLen)) {
+					bestLen = sctLen;
+					bestI = iPlus1;
+				}
+			}
+
+			// insert best after bestI
+			this.AX.splice(bestI, 1);
+			this.AY.splice(bestI, 1);
+
+			// set initial control points
+			this.calcControlsClosed(this.AX, this.BX, this.CX);
+			this.calcControlsClosed(this.AY, this.BY, this.CY);
+
+			// initial compare contour/curve.
+			// NOTE: Need to call to update FCOEF
+			this.compareInit(this.contourX.length * this.ratioCompare, this.contourX, this.contourY);
+			this.compareBalance();
+			this.totalError = this.compare();
+		}
+	}
+
+	/*
 	 * Timer update
 	 */
 	this.tick = function () {

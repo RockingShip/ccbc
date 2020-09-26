@@ -85,6 +85,8 @@
 	<div class="bonk"></div>
 	<div class="knob"></div>
 </div>
+<span id="numControls"></span>
+<button id="butMode"><b>VISUAL</b>/<strike>precise</strike></button>
 
 <div id="wrapper">
 	<canvas id="animated"></canvas>
@@ -100,6 +102,7 @@
 let AX = <span id="curveAX"></span>;
 let AY = <span id="curveAY"></span>;
 </pre>
+<p>"Visual/precise" changes where control points are added/removed.</p>
 
 <script type="text/javascript">
 
@@ -280,9 +283,21 @@ let AY = <span id="curveAY"></span>;
 				// doStatus();
 			},
 		});
+		document.id("numControls").set("text", "numControls=" + slider.step);
 
-		// alternative curves when using the slider
-		let alts = undefined;
+		/*
+		 * activate mode button
+		 */
+		let visualPrecise = true; // default to visual
+		const butMode = document.id("butMode");
+		butMode.addEvent("click", function () {
+			if (visualPrecise) {
+				butMode.set("html", "<strike>visual</strike>/<b>PRECISE</b>");
+			} else {
+				butMode.set("html", "<b>VISUAL</b>/<strike>precise</strike>");
+			}
+			visualPrecise = !visualPrecise;
+		});
 
 		/*
 		 * worker queue
@@ -314,6 +329,7 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * interval timer for animation
 		 */
+		let alts = undefined; // alternative curves when using the slider
 		setInterval(function () {
 			// draw frame
 			ctx.fillStyle = "#eee"
@@ -331,24 +347,17 @@ let AY = <span id="curveAY"></span>;
 					followCurve.totalError = followCurve.compare();
 
 					alts[slider.step] = followCurve;
+
+					// slide gesture stating, remove pads
+					window.pads.updatePads([], []);
 				}
 				if (!alts[slider.step]) {
 					// remove pads
-					window.pads.updatePads([], []);
-
 					let newCurve = new Curve();
 
+					// copy curve/contour
 					newCurve.AX = followCurve.AX.slice();
 					newCurve.AY = followCurve.AY.slice();
-					if (slider.step < newCurve.AX.length) {
-						newCurve.AX.length = slider.step;
-						newCurve.AY.length = slider.step;
-					} else {
-						while (newCurve.AX.length < slider.step) {
-							newCurve.AX.push(newCurve.AX.length*10);
-							newCurve.AY.push(newCurve.AY.length*10);
-						}
-					}
 					newCurve.contourX = followCurve.contourX.slice();
 					newCurve.contourY = followCurve.contourY.slice();
 
@@ -361,14 +370,26 @@ let AY = <span id="curveAY"></span>;
 					newCurve.compareBalance();
 					newCurve.totalError = newCurve.compare();
 
+					// change number of controls
+					if (slider.step > newCurve.AX.length)
+						newCurve.increaseControls(slider.step, visualPrecise);
+					else if (slider.step < newCurve.AX.length)
+						newCurve.decreaseControls(slider.step, visualPrecise);
+
 					alts[slider.step] = newCurve;
 					document.id("txt3").set("text", slider.step);
 				}
-				// focus on 'selected' curve
-				followCurve = alts[slider.step];
+
+				// test if slide changed active curve
+				if (followCurve !== alts[slider.step]) {
+					// focus on 'selected' curve
+					followCurve = alts[slider.step];
+					document.id("numControls").set("text", "numControls=" + slider.step);
+				}
+
 			} else {
 				if (alts) {
-					// assign new pads
+					// end of slice gesture, show pads
 					window.pads.updatePads(followCurve.AX, followCurve.AY);
 					alts = undefined;
 				}
@@ -386,12 +407,15 @@ let AY = <span id="curveAY"></span>;
 
 			}
 
+			// draw curve depending on in curve/contour mode
 			if (slider.isDragging) {
+				// contour matching
 				followCurve.drawCompare(ctx);
 				followCurve.drawContour(ctx, followCurve.contourX, followCurve.contourY, "#f00");
 				followCurve.drawCurve(ctx, "#00f");
 				followCurve.drawCurvePoints(ctx, 2, "#00f");
 			} else {
+				// simple curve with pad elements
 				followCurve.drawCurve(ctx, "#00f");
 				followCurve.drawCurvePoints(ctx, 2, "#00f");
 			}

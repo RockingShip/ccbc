@@ -77,6 +77,7 @@ let MySlider = new Class({
 		// set initial positions
 		this.set(options.initialStep);
 		bonk.style.left = knob.style.left;
+		bonk.lastpos = knob.offsetLeft;
 
 		let dragOptions = {
 			snap: 0,

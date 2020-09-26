@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-26 18:58:49 Redesigned how control points are added/removed `docs/resize.*`.
 2020-09-26 01:46:28 Redesigned `docs/resize.*`.
 2020-09-25 19:25:10 Added `docs/favicon.svg`.
 2020-09-24 13:22:46 Lost+Found.
