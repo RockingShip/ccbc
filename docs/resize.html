@@ -231,7 +231,6 @@ let AY = <span id="curveAY"></span>;
 					followCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
 					// initial compare contour/curve
 					followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
-					followCurve.compareBalance();
 					followCurve.totalError = followCurve.compare();
 
 					alts[slider.step] = followCurve;
@@ -255,7 +254,6 @@ let AY = <span id="curveAY"></span>;
 
 					// initial compare contour/curve
 					newCurve.compareInit(newCurve.contourX.length * newCurve.ratioCompare, newCurve.contourX, newCurve.contourY);
-					newCurve.compareBalance();
 					newCurve.totalError = newCurve.compare();
 
 					// change number of controls
@@ -290,7 +288,6 @@ let AY = <span id="curveAY"></span>;
 				userCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
 				// initial compare contour/curve
 				followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
-				followCurve.compareBalance();
 				followCurve.totalError = followCurve.compare();
 
 			}

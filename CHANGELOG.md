@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-26 19:11:23 Drop `compareBalance()`, too complicated. Result now might be less optimal.
 2020-09-26 19:05:11 Event queue is throttled, call `tick()` in bursts `docs/resize.*`.
 2020-09-26 18:58:49 Redesigned how control points are added/removed `docs/resize.*`.
 2020-09-26 01:46:28 Redesigned `docs/resize.*`.
