@@ -142,25 +142,29 @@ let followAY = <span id="followAY"></span>;
 		window.frameNr = 0;
 
 		// worker queue
+		let numTicks = 0;
 		let myTick = function () {
 			let delay = 0;
-			let ms = Date.now();
+			const ms = Date.now();
 
-			// update on-curve controls for better fit
-			let ret = followCurve.tick();
+			do {
+				// update on-curve controls for better fit
+				let ret = followCurve.tick();
+				numTicks++;
 
-			// update stats
-			document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
+				// update stats
+				document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
 
-			if (ret) {
-				// call again
-				document.id("txt2").set("text", "A" + (Date.now() - ms));
-				delay = 0;
-			} else {
-				// nothing changed
-				document.id("txt2").set("text", "B" + (Date.now() - ms));
-				delay = 500;
-			}
+				if (ret) {
+					// call again
+					document.id("txt2").set("text", "A" + (Date.now() - ms));
+					delay = 0;
+				} else {
+					// nothing changed
+					document.id("txt2").set("text", "B" + (Date.now() - ms));
+					delay = 500;
+				}
+			} while (Date.now() - ms < 10);
 			setTimeout(myTick, delay);
 		};
 		setTimeout(myTick, 0);
