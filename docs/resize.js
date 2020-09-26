@@ -518,28 +518,28 @@ function Curve() {
 		//---------
 
 		let overunder = 0;
-		let lastLen = segLen[sN-1];
+		let lastLen = segLen[sN - 1];
 		let total = 0;
 		let iFrag = 0;
-		console.log(JSON.stringify({sN:sN, fN:fN}));
+		console.log(JSON.stringify({sN: sN, fN: fN}));
 
-		for (let iSeg=0; iSeg<sN; iSeg++) {
+		for (let iSeg = 0; iSeg < sN; iSeg++) {
 			const minLen = lastLen / maxRatio;
 			const maxLen = lastLen * maxRatio;
 
 			let slen = 0;
 			let bestErr = -1, bestFrag = -1, bestLen = -1;
 
-			for(;;) {
+			for (; ;) {
 				let flen = fragLen[iFrag];
 
 				if (slen < minLen) {
 					// segment still too small, collect
 					slen += flen;
 
-					iFrag = (iFrag+1)%fN;
+					iFrag = (iFrag + 1) % fN;
 					// console.log(JSON.stringify({id:"A", iSeg:iSeg, sN:sN, iFrag:iFrag, total:total, slen:slen, flen:flen, minLen:minLen, maxLen:maxLen}));
-				} else if (slen+flen < maxLen) {
+				} else if (slen + flen < maxLen) {
 					// segment within range, collect and remember best distance
 					slen += flen;
 
@@ -552,7 +552,7 @@ function Curve() {
 						bestLen = slen;
 					}
 					// console.log(JSON.stringify({id:"B", iSeg:iSeg, sN:sN, iFrag:iFrag, total:total, slen:slen, flen:flen, minLen:minLen, maxLen:maxLen, err:err, bestFrag:bestFrag}));
-					iFrag = (iFrag+1)%fN;
+					iFrag = (iFrag + 1) % fN;
 				} else {
 					if (bestErr === -1) {
 						// margin is too tight between min/max, last one was best
@@ -572,14 +572,14 @@ function Curve() {
 					segErr[iSeg] = bestErr;
 
 					// need index of next segment
-					const iPlus1 = (iSeg+1)%sN;
+					const iPlus1 = (iSeg + 1) % sN;
 
 					// before overwriting `segI[iPlus1]`, determine the over/underflow
 					overunder = iFrag - segI[iPlus1];
 					// wraparound
-					if (overunder < -fN/2)
+					if (overunder < -fN / 2)
 						overunder += fN;
-					else if (overunder > fN/2)
+					else if (overunder > fN / 2)
 						overunder -= fN;
 
 					// Set start of next segment
@@ -594,7 +594,7 @@ function Curve() {
 		}
 		console.log(fN);
 		// document.id("txt4").set("text", JSON.stringify({sN:sN, fN:fN, iFrag: iFrag}));
-		console.log(JSON.stringify({fN:fN, iFrag:iFrag, seg0:segI[0], segN:segI[sN-1], overunder: overunder}));
+		console.log(JSON.stringify({fN: fN, iFrag: iFrag, seg0: segI[0], segN: segI[sN - 1], overunder: overunder}));
 
 		/*
 		 * Repeat until stable
@@ -614,18 +614,15 @@ function Curve() {
 			let slen = 0;
 			let bestErr = -1, bestFrag = -1, bestLen = -1;
 
-			if (iSeg == 8)
-				console.log("#");
-
-			for(;;) {
+			for (; ;) {
 				let flen = fragLen[iFrag];
 
 				if (slen < minLen) {
 					// segment still too small, collect
 					slen += flen;
 
-					iFrag = (iFrag+1)%fN;
-				} else if (slen+flen < maxLen) {
+					iFrag = (iFrag + 1) % fN;
+				} else if (slen + flen < maxLen) {
 					// segment within range, collect and remember best distance
 					slen += flen;
 
@@ -638,7 +635,7 @@ function Curve() {
 						bestLen = slen;
 					}
 
-					iFrag = (iFrag+1)%fN;
+					iFrag = (iFrag + 1) % fN;
 				} else {
 					if (bestErr === -1) {
 						// margin is too tight between min/max, last one was best
@@ -658,14 +655,14 @@ function Curve() {
 					segErr[iSeg] = bestErr;
 
 					// need index of next segment
-					const iPlus1 = (iSeg+1)%sN;
+					const iPlus1 = (iSeg + 1) % sN;
 
 					// before overwriting `segI[iPlus1]`, determine the over/underflow
 					overunder = iFrag - segI[iPlus1];
 					// wraparound
-					if (overunder < -fN/2)
+					if (overunder < -fN / 2)
 						overunder += fN;
-					else if (overunder > fN/2)
+					else if (overunder > fN / 2)
 						overunder -= fN;
 
 					// Set start of next segment
@@ -725,33 +722,33 @@ function Curve() {
 				if (segLen[iPrev] >= segLen[iCurr] * maxRatio)
 					console.log(JSON.stringify({
 						id: "ERROR3A",
-						iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
+						iPrevPrev: iPrevPrev, iPrev: iPrev, iCurr: iCurr, iNext: iNext, iNextNext: iNextNext,
+						lPrevPrev: segLen[iPrevPrev], lPrev: segLen[iPrev], lCurr: segLen[iCurr], lNext: segLen[iNext], lNextNext: segLen[iNextNext],
+						jFirstCurr: jFirstCurr, jSecondCurr: jSecondCurr, jLastCurr: jLastCurr, jFirstNext: jFirstNext,
 						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
 					}));
 				if (segLen[iPrev] * maxRatio <= segLen[iCurr])
 					console.log(JSON.stringify({
 						id: "ERROR3B",
-						iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
+						iPrevPrev: iPrevPrev, iPrev: iPrev, iCurr: iCurr, iNext: iNext, iNextNext: iNextNext,
+						lPrevPrev: segLen[iPrevPrev], lPrev: segLen[iPrev], lCurr: segLen[iCurr], lNext: segLen[iNext], lNextNext: segLen[iNextNext],
+						jFirstCurr: jFirstCurr, jSecondCurr: jSecondCurr, jLastCurr: jLastCurr, jFirstNext: jFirstNext,
 						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
 					}));
 				if (segLen[iCurr] >= segLen[iNext] * maxRatio)
 					console.log(JSON.stringify({
 						id: "ERROR3C",
-						iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
+						iPrevPrev: iPrevPrev, iPrev: iPrev, iCurr: iCurr, iNext: iNext, iNextNext: iNextNext,
+						lPrevPrev: segLen[iPrevPrev], lPrev: segLen[iPrev], lCurr: segLen[iCurr], lNext: segLen[iNext], lNextNext: segLen[iNextNext],
+						jFirstCurr: jFirstCurr, jSecondCurr: jSecondCurr, jLastCurr: jLastCurr, jFirstNext: jFirstNext,
 						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
 					}));
 				if (segLen[iCurr] * maxRatio <= segLen[iNext])
 					console.log(JSON.stringify({
 						id: "ERROR3D",
-						iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
+						iPrevPrev: iPrevPrev, iPrev: iPrev, iCurr: iCurr, iNext: iNext, iNextNext: iNextNext,
+						lPrevPrev: segLen[iPrevPrev], lPrev: segLen[iPrev], lCurr: segLen[iCurr], lNext: segLen[iNext], lNextNext: segLen[iNextNext],
+						jFirstCurr: jFirstCurr, jSecondCurr: jSecondCurr, jLastCurr: jLastCurr, jFirstNext: jFirstNext,
 						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
 					}));
 			} else {
@@ -1050,8 +1047,8 @@ function Curve() {
 			}
 
 			// insert best after bestI
-			this.AX.splice(bestI+1, 0, bestX);
-			this.AY.splice(bestI+1, 0, bestY);
+			this.AX.splice(bestI + 1, 0, bestX);
+			this.AY.splice(bestI + 1, 0, bestY);
 
 			// set initial control points
 			this.calcControlsClosed(this.AX, this.BX, this.CX);
@@ -1102,7 +1099,7 @@ function Curve() {
 				}
 
 				// second second
-				let iPlus1 = (iSct+1) % bN;
+				let iPlus1 = (iSct + 1) % bN;
 				for (t = 0, x = AX[iPlus1], y = AY[iPlus1]; t < 1; t += dt, k++) {
 
 					// Determine step increments

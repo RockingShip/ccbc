@@ -35,10 +35,7 @@
 		body {
 			font-family: Verdana, Geneva, sans-serif;
 		}
-		h1 {
-			text-align: center;
-		}
-		h3 {
+		h1, h2, h3, h4, h5 {
 			text-align: center;
 		}
 		div {
@@ -73,14 +70,11 @@
 </head>
 <body>
 <h3>Switching between Bezier vector and contour bitmap mode</h3>
-
-<p>You have control over a bezier curve through the large red pads.</p>
+<h4>Control the bezier curve through the large red pads.</h4>
 <p>With inspiration move the pads.</p>
 <p>Press the slider knob and hold down, slide to change number of control points.</p>
 <p>The curve will self-adapt to the changes.</p>
-<p>Release and repeat.</p>
-
-<p>Position slider to select number of on-curve control points.</p>
+<p>Hold as long as you like, release and repeat.</p>
 <div id="slider" class="slider" style="background: #CCC; height: 16px; width: 500px; position: relative">
 	<div class="bonk"></div>
 	<div class="knob"></div>
@@ -167,120 +161,9 @@ let AY = <span id="curveAY"></span>;
 		slider = new MySlider(slider, knob, bonk, {
 			range: [3, 100],
 			steps: 0,
-			initialStep: 10,
-			onChange: function(value){
-				return;
-				if (0) {
-					let newAX = [];
-					let newAY = [];
-					curve.fastChordLength(value, newAX, newAY);
-					curve.AX = newAX;
-					curve.AY = newAY;
-					calcControlsClosed(curve.AX, curve.BX, curve.CX);
-					calcControlsClosed(curve.AY, curve.BY, curve.CY);
-					dots.updateDots(curve.AX, curve.AY);
-
-					let canvas = document.id('animated');
-					let ctx = canvas.getContext("2d");
-
-					ctx.beginPath();
-					ctx.strokeStyle = '#0ff';
-					ctx.fillStyle = '#0ff';
-					ctx.lineWidth = 2;
-					for (let i = 0; i < newAX.length; i++) {
-						ctx.moveTo(newAX[i], newAY[i]);
-						ctx.arc(newAX[i], newAY[i], 8, 0, 2 * Math.PI);
-					}
-					ctx.stroke();
-
-					curve.draw(context, 0, width, height);
-				} else {
-					let tmpAX = [...userCurve.AX];
-					let tmpAY = [...userCurve.AY];
-					let tmpBX = [...userCurve.BX];
-					let tmpBY = [...userCurve.BY];
-					let tmpCX = [...userCurve.CX];
-					let tmpCY = [...userCurve.CY];
-					calc2(tmpAX, tmpAY, tmpBX, tmpBY, tmpCX, tmpCY);
-
-					curve.AX = tmpAX;
-					curve.AY = tmpAY;
-
-					calcControlsClosed(curve.AX, curve.BX, curve.CX);
-					calcControlsClosed(curve.AY, curve.BY, curve.CY);
-					dots.updateDots(curve.AX, curve.AY);
-
-					let canvas = document.id('animated');
-					let ctx = canvas.getContext("2d");
-
-					ctx.beginPath();
-					ctx.strokeStyle = '#0ff';
-					ctx.fillStyle = '#0ff';
-					ctx.lineWidth = 2;
-					for (let i = 0; i < curve.AX.length; i++) {
-						ctx.moveTo(curve.AX[i], curve.AY[i]);
-						ctx.arc(curve.AX[i], curve.AY[i], 8, 0, 2 * Math.PI);
-					}
-					ctx.stroke();
-
-					curve.draw(context, 0, width, height);
-
-				}
-				return;
-
-
-				while (undo.length < value) {
-					let row = redo.shift();
-					let i = row.id;
-
-					if (!row.d) {
-						let init0 = Init0[i];
-						let init1 = row.P;
-						let AX = [];
-						let AY = [];
-						let BX = [];
-						let BY = [];
-						let CX = [];
-						let CY = [];
-						for (let j=0; j<init1.length; j++) {
-							AX[j] = Math.round(init0[init1[j]][0]);
-							AY[j] = Math.round(init0[init1[j]][1]);
-						}
-						if (__.paths[i].closed) {
-							// closed
-							calcControlsClosed(AX, BX, CX);
-							calcControlsClosed(AY, BY, CY);
-						} else {
-							// open
-							calcControlsOpen(AX, BX, CX);
-							calcControlsOpen(AY, BY, CY);
-						}
-
-						row.P = init1;
-						row.AX = AX;
-						row.AY = AY;
-						row.d = genPath(AX,AY,BX,BY,CX,CY);
-						row.cd = genCompress(AX,AY,BX,BY,CX,CY);
-						let err = calcError(AX, AY, BX, BY, CX, CY, row.P, __.paths[i].refX, __.paths[i].refY);
-						row.errMax = err.errMax;
-						row.errAvg = err.errAvg;
-					}
-
-					undo.unshift(__.paths[i].row);
-					__.paths[i].row = row;
-					__.paths[i].set('d', row.d);
-
-				}
-				while (undo.length > value) {
-					let row = undo.shift();
-
-					let i = row.id;
-
-					redo.unshift(__.paths[i].row);
-					__.paths[i].row = row;
-					__.paths[i].set('d', row.d);
-				}
-				// doStatus();
+			initialStep: followCurve.AX.length,
+			onChange: function (value) {
+				// functionality temporarily moved to draw event handler
 			},
 		});
 		document.id("numControls").set("text", "numControls=" + slider.step);
@@ -353,7 +236,7 @@ let AY = <span id="curveAY"></span>;
 
 					alts[slider.step] = followCurve;
 
-					// slide gesture stating, remove pads
+					// slide gesture starting, remove pads
 					window.pads.updatePads([], []);
 				}
 				if (!alts[slider.step]) {
