@@ -2,7 +2,7 @@
 <!--
     resize.html
 
-        Interactive demonstration with a 5 segment closed bezier path.
+        Interactive demonstration of switching between curve and contour mode.
 -->
 <!--
  *  This file is part of ccbc, Closed Continuous Bézier Curves.
@@ -24,12 +24,13 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-	<link rel="shortcut icon" type="image/svg" href="favicon.svg">
-	<title>Manipulating a closed B&eacute;zier path by coordinates</title>
+	<link rel="shortcut icon" type="image/svg" href="favicon.svg"/>
+	<title>Switching between Bezier vector and contour bitmap mode</title>
 	<script src="MooTools-Core-1.6.0.js" type="text/javascript"></script>
 	<script src="MooTools-More-1.6.0.js" type="text/javascript"></script>
-	<script src="slider.js" type="text/javascript"></script>
 	<script src="resize.js" type="text/javascript"></script>
+	<script src="pads.js" type="text/javascript"></script>
+	<script src="slider.js" type="text/javascript"></script>
 	<style type="text/css">
 		body {
 			font-family: Verdana, Geneva, sans-serif;
@@ -39,6 +40,9 @@
 		}
 		h3 {
 			text-align: center;
+		}
+		div {
+			position: relative;
 		}
 		svg {
 			background-color: #00000000; /* NOTE: alpha=0 */
@@ -52,33 +56,54 @@
 			position: absolute;
 			z-index: -1;
 		}
+		.knob {
+			background: #000;
+			width: 16px;
+			height: 16px;
+		}
+		.bonk {
+			background: #888;
+			width: 16px;
+			height: 16px;
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
 	</style>
 </head>
 <body>
-<h1>Manipulating a closed B&eacute;zier path by coordinates</h1>
-<h3>Eliminating control points</h3>
+<h3>Switching between Bezier vector and contour bitmap mode</h3>
 
-<p>Interactive demonstration with a multi segment closed bezier path with slider for number of segments.</p>
-<p>The short green lines are to illustrate where the control points would normally be located.</p>
-<p>Move the red dots on the blue line with your mouse/finger.</p>
+<p>You have control over a bezier curve through the large red pads.</p>
+<p>With inspiration move the pads.</p>
+<p>Press the slider knob and hold down, slide to change number of control points.</p>
+<p>The curve will self-adapt to the changes.</p>
+<p>Release and repeat.</p>
 
-<p>Position slider to select compression factor.</p>
+<p>Position slider to select number of on-curve control points.</p>
 <div id="slider" class="slider" style="background: #CCC; height: 16px; width: 500px; position: relative">
-  <div class="bonk" style="background: #888; width: 16px; height: 16px; position: absolute; top: 0; left: 0;"></div>
-  <div class="knob" style="background: #000; width: 16px; height: 16px;"></div>
+	<div class="bonk"></div>
+	<div class="knob"></div>
 </div>
 
 <div id="wrapper">
 	<canvas id="animated"></canvas>
-	<svg id="svg" width="500px" height="500px">
-	</svg>
+	<svg id="svg" width="500px" height="500px"></svg>
 </div>
 <div id="txt"></div>
 <div id="txt2"></div>
+<div id="txt3"></div>
+<div id="txt4"></div>
+
+<pre>
+// curve control points
+let AX = <span id="curveAX"></span>;
+let AY = <span id="curveAY"></span>;
+</pre>
 
 <script type="text/javascript">
 
-	window.addEvent('domready', function () {
+	window.addEvent("domready", function () {
 
 		/*
 		 * Create UI
@@ -91,26 +116,44 @@
 		let height = rect.height;
 
 		// create canvas
-		let canvas = document.id('animated');
+		let canvas = document.id("animated");
 		canvas.width = width;
 		canvas.height = height;
 
 		// access graphics context
-		let context = canvas.getContext("2d");
+		let ctx = canvas.getContext("2d");
 
-		/*
-		 * Create bezier curve
-		 */
-		let curve = new Curve();
-		calcControlsClosed(curve.AX, curve.BX, curve.CX);
-		calcControlsClosed(curve.AY, curve.BY, curve.CY);
+		let followCurve = new Curve();
+		setup(followCurve, width, height);
 
-		let dots = new Dots(svg, context, curve);
-		dots.updateDots(curve.AX, curve.AY);
+		// display initial path points
+		document.id("curveAX").set("text", JSON.encode(followCurve.AX));
+		document.id("curveAY").set("text", JSON.encode(followCurve.AY));
 
-		// load path points
-		document.id('txtA').set('text', JSON.encode(curve.AX));
-		document.id('txtB').set('text', JSON.encode(curve.BX));
+		// draw followCurve
+		ctx.fillStyle = "#eee"
+		ctx.fillRect(0, 0, width, height);
+		followCurve.draw(ctx);
+
+		// create user pads
+		window.pads = new Pads(svg, function (pt, x, y) {
+			// update on-curve control point
+			followCurve.AX[pt] = x;
+			followCurve.AY[pt] = y;
+
+			// apply change to contour
+			followCurve.calcControlsClosed(followCurve.AX, followCurve.BX, followCurve.CX);
+			followCurve.calcControlsClosed(followCurve.AY, followCurve.BY, followCurve.CY);
+			let controlLength = followCurve.calcControlLength();
+			followCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
+
+			// initial compare contour/curve
+			followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
+			followCurve.compareBalance();
+			followCurve.totalError = followCurve.compare();
+		});
+		window.pads.updatePads(followCurve.AX, followCurve.AY);
+		window.frameNr = 0;
 
 		/*
 		 * activate slider
@@ -118,11 +161,12 @@
 		let slider = document.id('slider');
 		let knob = slider.getElement('.knob');
 		let bonk = slider.getElement('.bonk');
-		new MySlider(slider, knob, bonk, {
-			range: [3, 32],
+		slider = new MySlider(slider, knob, bonk, {
+			range: [3, 100],
 			steps: 0,
 			initialStep: 10,
 			onChange: function(value){
+				return;
 				if (0) {
 					let newAX = [];
 					let newAY = [];
@@ -148,12 +192,12 @@
 
 					curve.draw(context, 0, width, height);
 				} else {
-					let tmpAX = [...curve.AX];
-					let tmpAY = [...curve.AY];
-					let tmpBX = [...curve.BX];
-					let tmpBY = [...curve.BY];
-					let tmpCX = [...curve.CX];
-					let tmpCY = [...curve.CY];
+					let tmpAX = [...userCurve.AX];
+					let tmpAY = [...userCurve.AY];
+					let tmpBX = [...userCurve.BX];
+					let tmpBY = [...userCurve.BY];
+					let tmpCX = [...userCurve.CX];
+					let tmpCY = [...userCurve.CY];
 					calc2(tmpAX, tmpAY, tmpBX, tmpBY, tmpCX, tmpCY);
 
 					curve.AX = tmpAX;
@@ -167,8 +211,8 @@
 					let ctx = canvas.getContext("2d");
 
 					ctx.beginPath();
-					ctx.strokeStyle = "#0ff";
-					ctx.fillStyle = "#0ff";
+					ctx.strokeStyle = '#0ff';
+					ctx.fillStyle = '#0ff';
 					ctx.lineWidth = 2;
 					for (let i = 0; i < curve.AX.length; i++) {
 						ctx.moveTo(curve.AX[i], curve.AY[i]);
@@ -237,43 +281,130 @@
 			},
 		});
 
-		// draw initial state
-		curve.draw(context, 0, width, height);
+		// alternative curves when using the slider
+		let alts = undefined;
+
+		/*
+		 * worker queue
+		 */
+		let myTick = function () {
+			let delay = 0;
+
+			if (!slider.isDragging) {
+				delay = 500; // only fit contour when dragging
+			} else {
+				// update on-curve controls for better fit
+				let ret = followCurve.tick();
+
+				// update stats
+				document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
+
+				if (ret) {
+					// call again
+					delay = 0;
+				} else {
+					// nothing changed
+					delay = 500;
+				}
+			}
+			setTimeout(myTick, delay);
+		};
+		setTimeout(myTick, 0);
+
+		/*
+		 * interval timer for animation
+		 */
+		setInterval(function () {
+			// draw frame
+			ctx.fillStyle = "#eee"
+			ctx.fillRect(0, 0, width, height);
+			if (slider.isDragging) {
+				if (!alts) {
+					alts = [];
+
+					// capture current contour
+					let controlLength = followCurve.calcControlLength(); // determine control net length
+					followCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
+					// initial compare contour/curve
+					followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
+					followCurve.compareBalance();
+					followCurve.totalError = followCurve.compare();
+
+					alts[slider.step] = followCurve;
+				}
+				if (!alts[slider.step]) {
+					// remove pads
+					window.pads.updatePads([], []);
+
+					let newCurve = new Curve();
+
+					newCurve.AX = followCurve.AX.slice();
+					newCurve.AY = followCurve.AY.slice();
+					if (slider.step < newCurve.AX.length) {
+						newCurve.AX.length = slider.step;
+						newCurve.AY.length = slider.step;
+					} else {
+						while (newCurve.AX.length < slider.step) {
+							newCurve.AX.push(newCurve.AX.length*10);
+							newCurve.AY.push(newCurve.AY.length*10);
+						}
+					}
+					newCurve.contourX = followCurve.contourX.slice();
+					newCurve.contourY = followCurve.contourY.slice();
+
+					// set initial control points
+					newCurve.calcControlsClosed(newCurve.AX, newCurve.BX, newCurve.CX);
+					newCurve.calcControlsClosed(newCurve.AY, newCurve.BY, newCurve.CY);
+
+					// initial compare contour/curve
+					newCurve.compareInit(newCurve.contourX.length * newCurve.ratioCompare, newCurve.contourX, newCurve.contourY);
+					newCurve.compareBalance();
+					newCurve.totalError = newCurve.compare();
+
+					alts[slider.step] = newCurve;
+					document.id("txt3").set("text", slider.step);
+				}
+				// focus on 'selected' curve
+				followCurve = alts[slider.step];
+			} else {
+				if (alts) {
+					// assign new pads
+					window.pads.updatePads(followCurve.AX, followCurve.AY);
+					alts = undefined;
+				}
+			}
+
+
+			if (0) {
+				// capture contour user and inject into follow
+				let controlLength = userCurve.calcControlLength(); // determine control net length
+				userCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
+				// initial compare contour/curve
+				followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
+				followCurve.compareBalance();
+				followCurve.totalError = followCurve.compare();
+
+			}
+
+			if (slider.isDragging) {
+				followCurve.drawCompare(ctx);
+				followCurve.drawContour(ctx, followCurve.contourX, followCurve.contourY, "#f00");
+				followCurve.drawCurve(ctx, "#00f");
+				followCurve.drawCurvePoints(ctx, 2, "#00f");
+			} else {
+				followCurve.drawCurve(ctx, "#00f");
+				followCurve.drawCurvePoints(ctx, 2, "#00f");
+			}
+
+			document.id("curveAX").set("text", JSON.encode(followCurve.AX));
+			document.id("curveAY").set("text", JSON.encode(followCurve.AY));
+
+			// next frame
+			window.frameNr++;
+		}, 1000 / 25);
+
 	});
 </script>
-
-<pre>
-// array of points that lie on the Bezier path
-let A = <span id="txtA"></span>;
-// resulting control points conveniently located here
-//  B = <span id="txtB"></span>;
-
-// coefficients for a 5 point closed path
-let c0 =  3.0/11.0;
-let c1 = -1.0/11.0;
-let c2 =  1.0/11.0;
-let c3 = -3.0/11.0;
-let c4 =  1;
-
-// calculate first control point
-let B = [
-  { x: A[1].x*c0 + A[2].x*c1 + A[3].x*c2 + A[4].x*c3 + A[0].x*c4 ,
-    y: A[1].y*c0 + A[2].y*c1 + A[3].y*c2 + A[4].y*c3 + A[0].y*c4 },
-  { x: A[2].x*c0 + A[3].x*c1 + A[4].x*c2 + A[0].x*c3 + A[1].x*c4 ,
-    y: A[2].y*c0 + A[3].y*c1 + A[4].y*c2 + A[0].y*c3 + A[1].y*c4 },
-  { x: A[3].x*c0 + A[4].x*c1 + A[0].x*c2 + A[1].x*c3 + A[2].x*c4 ,
-    y: A[3].y*c0 + A[4].y*c1 + A[0].y*c2 + A[1].y*c3 + A[2].y*c4 },
-  { x: A[4].x*c0 + A[0].x*c1 + A[1].x*c2 + A[2].x*c3 + A[3].x*c4 ,
-    y: A[4].y*c0 + A[0].y*c1 + A[1].y*c2 + A[2].y*c3 + A[3].y*c4 },
-  { x: A[0].x*c0 + A[1].x*c1 + A[2].x*c2 + A[3].x*c3 + A[4].x*c4 ,
-    y: A[0].y*c0 + A[1].y*c1 + A[2].y*c2 + A[3].y*c3 + A[4].y*c4 } ];
-
-// optionally mirror to second control point
-for (let i = 0; i < 5; i++) {
-  C[i] = { x: 2 * A[(i + 1) % 5].x - B[(i + 1) % 5].x,
-           y: 2 * A[(i + 1) % 5].y - B[(i + 1) % 5].y };
-}
-</pre>
 
 </body>
 </html>
