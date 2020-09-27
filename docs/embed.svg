@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" onload="run()">
+    <defs>
+	<desc>
+		/*
+		 * This file is part of ccbc, Closed Continuous Bézier Curves.
+		 * Copyright (C) 2012, xyzzy@rockingship.org
+		 *
+		 * This program is free software: you can redistribute it and/or modify
+		 * it under the terms of the GNU Affero General Public License as published
+		 * by the Free Software Foundation, either version 3 of the License, or
+		 * (at your option) any later version.
+		 *
+		 * This program is distributed in the hope that it will be useful,
+		 * but WITHOUT ANY WARRANTY; without even the implied warranty of
+		 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+		 * GNU Affero General Public License for more details.
+		 *
+		 * You should have received a copy of the GNU Affero General Public License
+		 * along with this program. If not, see "https://www.gnu.org/licenses/."
+		 */
+	</desc>
+	<style>
+		path {
+			pointer-events: none;
+		}
+	</style>
+    </defs>
+
+    <circle id="pad1" r="10" stroke="none" fill="#000" cx="38" cy="176"/>
+    <circle id="pad2" r="10" stroke="none" fill="#000" cx="231" cy="459"/>
+    <circle id="pad3" r="10" stroke="none" fill="#000" cx="215" cy="188"/>
+    <circle id="pad4" r="10" stroke="none" fill="#000" cx="439" cy="368"/>
+    <circle id="pad5" r="10" stroke="none" fill="#000" cx="322" cy="82"/>
+
+    <path id="path2" stroke-width="2" stroke="#ccc" fill="none" d="M38,176L34,295L193,482L231,459L269,436L184,204L215,188L246,172L392,371L439,368L486,365L433,159L322,82L211,5L42,57z"/>
+    <path id="path1" stroke-width="2" stroke="#00f" fill="none" d="M38,176 C34,295 193,482 231,459 S184,204 215,188 S392,371 439,368 S433,159 322,82 S42,57 38,176 z"/>
+    <path id="path3" stroke-width="2" stroke="#0f0" fill="#0f0" d="M37,210.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M37,213L83,353M83,350.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M83,353L205,475M205,472a2.5,2 0 1,0 0,5 a2,2.5 0 1,0 0,-5M243,449.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M243,452L243,364M243,361.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M243,364L194,199M194,196.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M225,180.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M225,183L291,234M291,231.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M291,234L407,370M407,367.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M454,364.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M454,367L470,301M470,298.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M470,301L399,135M399,132a2.5,2 0 1,0 0,5 a2,2.5 0 1,0 0,-5M288,55.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M288,58L159,21M159,18.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M159,21L41,94M41,91.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5"/>
+    <path id="path4" stroke-width="2" stroke="#f00" fill="#f00" d="M51,253.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M51,256L121,391M121,388.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M243,422a2.5,2 0 1,0 0,5 a2,2.5 0 1,0 0,-5M243,425L228,313M228,310.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M245,196.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M245,199L327,276M327,273.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M459,344.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M459,347L448,250M448,247.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M248,44.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M248,47L122,44M122,41.5a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5"/>
+    <path id="path5" stroke-width="2" stroke="#000" fill="#000" d="M73,296a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M238,388a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M270,221a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M456,315a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5M209,44a2,2.5 0 1,0 0,5 a2,2.5 0 1,0 0,-5"/>
+
+    <script xlink:href="embed.js" type="text/javascript"/>
+</svg>

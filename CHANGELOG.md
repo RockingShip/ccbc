@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-27 23:16:36 Added scripted SVG `docs/embed.*`.
 2020-09-27 09:53:40 `resize.decreaseControls()` did not update `this.pt`.
 2020-09-27 00:45:43 Original project creation date: 2012-11-13.
 2020-09-26 20:00:02 Event queue is throttled, call `tick()` in bursts `docs/compare.*`.
