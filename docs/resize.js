@@ -102,7 +102,7 @@ function Curve() {
 			ctx.arc(AX[i], AY[i], radius, 0, 2 * Math.PI);
 			ctx.moveTo(AX[i], AY[i]);
 		}
-		ctx.stroke();
+		ctx.fill();
 	}
 
 	/*
@@ -708,8 +708,8 @@ function Curve() {
 			}
 
 			// insert best after bestI
-			this.AX.splice(bestI + 1, 0, bestX);
-			this.AY.splice(bestI + 1, 0, bestY);
+			this.AX.splice((bestI + 1) % bN, 0, bestX);
+			this.AY.splice((bestI + 1) % bN, 0, bestY);
 
 			// set initial control points
 			this.calcControlsClosed(this.AX, this.BX, this.CX);
@@ -798,6 +798,12 @@ function Curve() {
 			this.compareInit(this.contourX.length * this.ratioCompare, this.contourX, this.contourY);
 			this.totalError = this.compare();
 		}
+
+		/*
+		 * Test that `this.pt` is within bounds of 0<=pt<bN
+		 */
+		if (this.pt >= this.AX.length)
+			this.pt = this.AX.length - 1;
 	}
 
 	/*

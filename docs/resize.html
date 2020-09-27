@@ -96,7 +96,7 @@
 let AX = <span id="curveAX"></span>;
 let AY = <span id="curveAY"></span>;
 </pre>
-<p>"Visual/precise" changes where control points are added/removed.</p>
+<p>"Visual/precise" changes how/where control points are added/removed.</p>
 
 <script type="text/javascript">
 
@@ -146,7 +146,6 @@ let AY = <span id="curveAY"></span>;
 
 			// initial compare contour/curve
 			followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
-			followCurve.compareBalance();
 			followCurve.totalError = followCurve.compare();
 		});
 		window.pads.updatePads(followCurve.AX, followCurve.AY);
