@@ -4,7 +4,7 @@
 
 /*
  *  This file is part of ccbc, Closed Continuous Bézier Curves.
- *  Copyright (C) 2020, xyzzy@rockingship.org
+ *  Copyright (C) 2012, xyzzy@rockingship.org
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published

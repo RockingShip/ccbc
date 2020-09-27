@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-27 00:45:43 Original project creation date: 2012-11-13.
 2020-09-26 20:00:02 Event queue is throttled, call `tick()` in bursts `docs/compare.*`.
 2020-09-26 19:11:23 Drop `compareBalance()`, too complicated. Result now might be less optimal.
 2020-09-26 19:05:11 Event queue is throttled, call `tick()` in bursts `docs/resize.*`.
