@@ -873,7 +873,6 @@ function Curve() {
 
 		return 0; // nothing changed
 	};
-
 }
 
 function setup(curve, width, height) {
@@ -894,19 +893,11 @@ function setup(curve, width, height) {
 	curve.calcControlsClosed(curve.AY, curve.BY, curve.CY);
 
 	// capture contour user and inject into follow
-	console.log(JSON.stringify(curve.AX));
-	console.log(JSON.stringify(curve.AY));
-	console.log(JSON.stringify(curve.BX));
-	console.log(JSON.stringify(curve.BY));
-	console.log(JSON.stringify(curve.CX));
-	console.log(JSON.stringify(curve.CY));
 	let controlLength = curve.calcControlLength(); // determine control net length
-	console.log(controlLength);
 	curve.captureContour(controlLength * curve.ratioContour, curve.contourX, curve.contourY);
 
 	// initial compare contour/curve
 	curve.compareInit(curve.contourX.length * curve.ratioCompare, curve.contourX, curve.contourY);
-
 	curve.totalError = curve.compare();
 
 }

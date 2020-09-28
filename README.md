@@ -15,16 +15,20 @@ Ultra high speed plotting allows for real-time fitting of curves onto contours (
 
 Samples: (Click image to open interactive version)
 
+## Basic bezier with on-curve control points.
+
 [![Animated](docs/animated.gif)](https://RockingShip.github.io/ccbc/animated.html)
-Basic bezier with on-curve control points.
+
+## Compare between Bezier curve and coordinate vector.
 
 [![Compare](docs/compare.webp)](https://RockingShip.github.io/ccbc/compare.html)
-Compare between Bezier curve and coordinate vector.
+
+## Bezier curve with dynamic number of composite sections.
+
+Top in "visual" mode, bottom in "precise" mode.
 
 [![Resize](docs/resizeV.webp)](https://RockingShip.github.io/ccbc/resize.html)
 [![Resize](docs/resizeP.webp)](https://RockingShip.github.io/ccbc/resize.html)
-Bezier curve with dynamic number of composite sections.
-Top in "visual" mode, bottom in "precise" mode.
 
 # Requirements
 
