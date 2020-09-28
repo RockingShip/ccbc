@@ -911,6 +911,13 @@ function setup(curve, width, height) {
 
 }
 
+/*
+ * The following is a `replayLog` player.
+ * Convert the frames to mp4 with:
+ *	ffmpeg -r 25 -i resize-%03d.png  -c:v libx264 -preset slow -crf 22 -profile:v baseline -level 3.0 -movflags +faststart -pix_fmt yuv420p -an resize.mp4
+ *	/bin/rm resize-[0-9][0-9][0-9].png
+ * 	ffmpeg -i resize.mp4  resize.webp
+ */
 if (typeof window === "undefined") {
 	let nodeCanvas = require("canvas");
 	let fs = require("fs")
@@ -926,54 +933,86 @@ if (typeof window === "undefined") {
 
 	let curve = new Curve();
 
-	setup(curve, width, height);
-	process.exit();
+	// read json file
+	// NOTE: leading "./" and trailing ".json" is required
+	let replayLog = require("./resize.json");
 
+	// replay
 	let frameNr = 0;
+	for (let iTrail=0; iTrail<replayLog.trails.length; iTrail++) {
+		const trail = replayLog.trails[iTrail];
 
-	for (let round = 0; round < 6;) {
-		let ret = followCurve.tick();
+		// create contour curve
+		curve.AX = trail.contourAX.slice();
+		curve.AY = trail.contourAY.slice();
+		// prepare curve
+		curve.calcControlsClosed(curve.AX, curve.BX, curve.CX);
+		curve.calcControlsClosed(curve.AY, curve.BY, curve.CY);
+		// capture contour
+		let controlLength = curve.calcControlLength(); // determine control net length
+		curve.captureContour(controlLength * curve.ratioContour, curve.contourX, curve.contourY);
 
-		if (ret === 0) {
-			// nothing changed
-		} else if (ret === 1) {
-			// call again
-		} else {
-			// draw frame
+		// create curve
+		curve.AX = trail.AX.slice();
+		curve.AY = trail.AY.slice();
+		// prepare curve
+		curve.calcControlsClosed(curve.AX, curve.BX, curve.CX);
+		curve.calcControlsClosed(curve.AY, curve.BY, curve.CY);
+		// prepare compare
+		curve.compareInit(curve.contourX.length * curve.ratioCompare, curve.contourX, curve.contourY);
+		curve.totalError = curve.compare();
+
+		// clear frame
+		ctx.fillStyle = "#eee"
+		ctx.fillRect(0, 0, width, height);
+		// draw frame
+		curve.drawCompare(ctx);
+		curve.drawContour(ctx, curve.contourX, curve.contourY, "#f00");
+		curve.drawCurve(ctx, "#00f");
+		curve.drawCurvePoints(ctx, 5, "#f00");
+
+		ctx.beginPath();
+		ctx.strokeStyle = "#000";
+		ctx.fillStyle = "#000";
+		ctx.font = "1em fixed";
+		ctx.fillText("numControls="+curve.AX.length, 25, height-25);
+
+		let buffer = canvas.toBuffer("image/png")
+		fs.writeFileSync("resize-" + frameNr.pad(3) + ".png", buffer)
+		fs.writeFileSync("resize.png", buffer)
+		frameNr++;
+
+		/*
+		 * Apply the ticks
+		 */
+		const ticks = trail.ticks;
+		let iTick = 0;
+		for (let iStep=0; iStep<ticks.length; iStep++) {
+			console.log(JSON.stringify({iTrail: iTrail, iTick: iTick, iFrame: frameNr}))
+			while (iTick < ticks[iStep]) {
+				curve.tick();
+				iTick++;
+			}
+
+			// clear frame
 			ctx.fillStyle = "#eee"
 			ctx.fillRect(0, 0, width, height);
-			followCurve.draw(ctx);
-			userCurve.drawCurvePoints(ctx, 10, "#f00");
+			// draw frame
+			curve.drawCompare(ctx);
+			curve.drawContour(ctx, curve.contourX, curve.contourY, "#f00");
+			curve.drawCurve(ctx, "#00f");
+			curve.drawCurvePoints(ctx, 5, "#f00");
+
+			ctx.beginPath();
+			ctx.strokeStyle = "#000";
+			ctx.fillStyle = "#000";
+			ctx.font = "1em fixed";
+			ctx.fillText("numControls="+curve.AX.length, 25, height-25);
 
 			let buffer = canvas.toBuffer("image/png")
-			fs.writeFileSync("compare-" + frameNr.pad(3) + ".png", buffer)
-			fs.writeFileSync("compare.png", buffer)
-
-			// move 2nd curve control for animated effect
-			let x = 470;
-			let y = Math.round(250 + 200 * Math.sin(frameNr * Math.PI * 2 / 60));
-
-			// reset frame# for every cycle
-			if (frameNr >= 60)
-				frameNr = -1;
-
-			userCurve.AX[2] = x;
-			userCurve.AY[2] = y;
-
-			// prepare curve
-			userCurve.calcControlsClosed(userCurve.AX, userCurve.BX, userCurve.CX);
-			userCurve.calcControlsClosed(userCurve.AY, userCurve.BY, userCurve.CY);
-			let controlLength = userCurve.calcControlLength();
-			userCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
-
-			// initial compare contour/curve
-			followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
-			followCurve.totalError = followCurve.compare();
-
-			// next frame
+			fs.writeFileSync("resize-" + frameNr.pad(3) + ".png", buffer)
+			fs.writeFileSync("resize.png", buffer)
 			frameNr++;
-			round++;
 		}
-
 	}
 }

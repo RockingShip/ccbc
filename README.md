@@ -21,8 +21,10 @@ Basic bezier with on-curve control points.
 [![Compare](docs/compare.webp)](https://RockingShip.github.io/ccbc/compare.html)
 Compare between Bezier curve and coordinate vector.
 
-[![Resize](docs/resize.webp)](https://RockingShip.github.io/ccbc/resize.html)
+[![Resize](docs/resizeV.webp)](https://RockingShip.github.io/ccbc/resize.html)
+[![Resize](docs/resizeP.webp)](https://RockingShip.github.io/ccbc/resize.html)
 Bezier curve with dynamic number of composite sections.
+Top in "visual" mode, bottom in "precise" mode.
 
 # Requirements
 

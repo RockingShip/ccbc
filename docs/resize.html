@@ -97,6 +97,8 @@ let AX = <span id="curveAX"></span>;
 let AY = <span id="curveAY"></span>;
 </pre>
 <p>"Visual/precise" changes how/where control points are added/removed.</p>
+<p>You can also choose to copy/store/save the replay log below:</p>
+<textarea id="txtReplayLog" rows="3" cols="10"></textarea>
 
 <script type="text/javascript">
 
@@ -173,13 +175,36 @@ let AY = <span id="curveAY"></span>;
 		let visualPrecise = true; // default to visual
 		const butMode = document.id("butMode");
 		butMode.addEvent("click", function () {
-			if (visualPrecise) {
-				butMode.set("html", "<strike>visual</strike>/<b>PRECISE</b>");
-			} else {
-				butMode.set("html", "<b>VISUAL</b>/<strike>precise</strike>");
-			}
 			visualPrecise = !visualPrecise;
+			if (visualPrecise) {
+				butMode.set("html", "<b>VISUAL</b>/<strike>precise</strike>");
+			} else {
+				butMode.set("html", "<strike>visual</strike>/<b>PRECISE</b>");
+			}
 		});
+
+		// frame numbers to bump slider step when recording automatically
+		let automated = [];
+		if (0) {
+			visualPrecise = true; // visual mode
+			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*16, 14*17-2, 14*18, 14*19+2, 14*20, 14*21+2, 14*22, 14*23, 14*24, 14*25, 600];
+		} else if (0) {
+			visualPrecise = false; // precise mode
+			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13+1, 14*14, 14*15+2, 14*16, 14*17, 14*18, 14*19-1, 14*20+2, 450];
+			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13, 14*14, 14*15+2, 14*16, 14*17, 14*18+2, 14*19, 14*20+2, 450];
+		}
+		if (automated.length)
+			slider.isDragging = true;
+
+		/*
+		 * Replay log
+		 */
+		let replayLog = {
+			width : width,
+			height: height,
+			visualPrecise: visualPrecise,
+			trails: [],
+		};
 
 		/*
 		 * worker queue
@@ -195,13 +220,13 @@ let AY = <span id="curveAY"></span>;
 				} else {
 					// update on-curve controls for better fit
 					let ret = followCurve.tick();
-					numTicks++;
 
 					// update stats
 					document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
 
 					if (ret) {
 						// call again
+						numTicks++;
 						delay = 0;
 					} else {
 						// nothing changed
@@ -216,48 +241,95 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * interval timer for animation
 		 */
+		let lastSliderStep = 0; // last slider position
 		setInterval(function () {
 			// draw frame
 			ctx.fillStyle = "#eee"
 			ctx.fillRect(0, 0, width, height);
 			if (slider.isDragging) {
+				// slide gesture
 				if (window.pads.pads.length) {
-					// slide gesture starting, remove pads
+					// starting gesture
+
+					// remove pads
 					window.pads.updatePads([], []);
 
 					// capture current contour
 					let controlLength = followCurve.calcControlLength(); // determine control net length
 					followCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
 					// and its curve
-					followCurve.contourAX = followCurve.contourX.slice();
-					followCurve.contourAY = followCurve.contourY.slice();
+					followCurve.contourAX = followCurve.AX.slice();
+					followCurve.contourAY = followCurve.AY.slice();
 				}
 
+				// last save to replayLog
+				if (replayLog.trails.length) {
+					// append sync point if it changed
+					const ticks = replayLog.trails[replayLog.trails.length - 1].ticks;
+					if (ticks.length === 0 || ticks[ticks.length - 1] !== numTicks)
+						ticks.push(numTicks);
+				}
+
+				// update automatic recording
+				if (frameNr >= automated[0]) {
+					// remove marker
+					automated.shift();
+					// bump slider step
+					if (automated.length)
+						slider.step++;
+					else
+						slider.isDragging = false;
+				}
+
+				if (slider.step !== lastSliderStep) {
 					// change number of controls
-				if (slider.step > followCurve.AX.length) {
-					followCurve.increaseControls(slider.step, visualPrecise);
-					document.id("numControls").set("text", "numControls=" + slider.step);
-				} else if (slider.step < followCurve.AX.length) {
-					followCurve.decreaseControls(slider.step, visualPrecise);
-					document.id("numControls").set("text", "numControls=" + slider.step);
+					if (slider.step > followCurve.AX.length) {
+						followCurve.increaseControls(slider.step, visualPrecise);
+						document.id("numControls").set("text", "numControls=" + slider.step);
+					} else if (slider.step < followCurve.AX.length) {
+						followCurve.decreaseControls(slider.step, visualPrecise);
+						document.id("numControls").set("text", "numControls=" + slider.step);
+					}
+
+					// add new coordinate trail to replayLog
+					if (replayLog.trails.length === 0 || replayLog.trails[replayLog.trails.length - 1].ticks.length > 0) {
+						// add new starting situation
+						replayLog.trails.push({
+							AX: followCurve.AX.slice(),
+							AY: followCurve.AY.slice(),
+							contourAX: followCurve.contourAX.slice(),
+							contourAY: followCurve.contourAY.slice(),
+							ticks: []
+						});
+					} else {
+						// update last marker
+						replayLog.trails[replayLog.trails.length - 1].AX = followCurve.AX.slice();
+						replayLog.trails[replayLog.trails.length - 1].AY = followCurve.AY.slice();
+					}
+					numTicks = 0;
+
+					lastSliderStep = slider.step;
 				}
 
 			} else {
 				if (!window.pads.pads.length) {
-					// end of slice gesture, show pads
+					// end of slide gesture
+
+					// last save to replayLog
+					if (replayLog.trails.length) {
+						// append sync point if it changed
+						const ticks = replayLog.trails[replayLog.trails.length - 1].ticks;
+						if (ticks.length === 0 || ticks[ticks.length - 1] !== numTicks)
+							ticks.push(numTicks);
+					}
+
+					// show pads
 					window.pads.updatePads(followCurve.AX, followCurve.AY);
+					// update replay log
+					document.id("txtReplayLog").set("text", JSON.encode(replayLog));
+					// invalidate last position
+					lastSliderStep = 0;
 				}
-			}
-
-
-			if (0) {
-				// capture contour user and inject into follow
-				let controlLength = userCurve.calcControlLength(); // determine control net length
-				userCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
-				// initial compare contour/curve
-				followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
-				followCurve.totalError = followCurve.compare();
-
 			}
 
 			// draw curve depending on in curve/contour mode
@@ -277,6 +349,9 @@ let AY = <span id="curveAY"></span>;
 			document.id("curveAY").set("text", JSON.encode(followCurve.AY));
 
 			// next frame
+			if (automated.length)
+				document.id("txt2").set("text", "frame="+frameNr);
+
 			window.frameNr++;
 		}, 1000 / 25);
 
