@@ -86,15 +86,15 @@
 	<canvas id="animated"></canvas>
 	<svg id="svg" width="500px" height="500px"></svg>
 </div>
-<div id="txt"></div>
+<div id="txtStatus"></div>
 <div id="txt2"></div>
 <div id="txt3"></div>
 <div id="txt4"></div>
 
 <pre>
 // curve control points
-let AX = <span id="curveAX"></span>;
-let AY = <span id="curveAY"></span>;
+let AX = <span id="txtAX"></span>;
+let AY = <span id="txtAY"></span>;
 </pre>
 <p>"Visual/precise" changes how/where control points are added/removed.</p>
 <p>You can also choose to copy/store/save the replay log below:</p>
@@ -111,33 +111,39 @@ let AY = <span id="curveAY"></span>;
 		 * Create UI
 		 */
 
+		// UI states
+		const butMode = document.id("butMode");
 		const butReplay = document.id("butReplay");
+		const domSlider = document.id('slider');
 		const txtReplayLog = document.id('txtReplayLog');
 		const txtReplayStatus = document.id('txtReplayStatus');
+		const txtAX = document.id("txtAX")
+		const txtAY = document.id("txtAY")
+		const txtStatus = document.id("txtStatus")
 
 		let visualPrecise = true; // default to visual
 		let stopPlay = true; // default to stop
 
 		// get size of SVG
-		let svg = document.id("svg");
-		let rect = svg.getBoundingClientRect();
-		let width = rect.width;
-		let height = rect.height;
+		const domSvg = document.id("svg");
+		const svgrect = domSvg.getBoundingClientRect();
+		let width = svgrect.width;
+		let height = svgrect.height;
 
 		// create canvas
-		let canvas = document.id("animated");
+		const canvas = document.id("animated");
 		canvas.width = width;
 		canvas.height = height;
 
 		// access graphics context
-		let ctx = canvas.getContext("2d");
+		const ctx = canvas.getContext("2d");
 
-		let followCurve = new Curve();
+		const followCurve = new Curve();
 		setup(followCurve, width, height);
 
 		// display initial path points
-		document.id("curveAX").set("text", JSON.encode(followCurve.AX));
-		document.id("curveAY").set("text", JSON.encode(followCurve.AY));
+		txtAX.set("text", JSON.encode(followCurve.AX));
+		txtAY.set("text", JSON.encode(followCurve.AY));
 
 		// draw followCurve
 		ctx.fillStyle = "#eee"
@@ -145,7 +151,7 @@ let AY = <span id="curveAY"></span>;
 		followCurve.draw(ctx);
 
 		// create user pads
-		window.pads = new Pads(svg, function (pt, x, y) {
+		window.pads = new Pads(domSvg, function (pt, x, y) {
 			// update on-curve control point
 			followCurve.AX[pt] = x;
 			followCurve.AY[pt] = y;
@@ -168,10 +174,9 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * activate slider
 		 */
-		let slider = document.id('slider');
-		let knob = slider.getElement('.knob');
-		let bonk = slider.getElement('.bonk');
-		slider = new MySlider(slider, knob, bonk, {
+		const domKnob = domSlider.getElement('.knob');
+		const domBonk = domSlider.getElement('.bonk');
+		const slider = new MySlider(domSlider, domKnob, domBonk, {
 			range: [3, 100],
 			steps: 0,
 			initialStep: followCurve.AX.length,
@@ -184,14 +189,16 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * activate mode button
 		 */
-		const butMode = document.id("butMode");
-		butMode.addEvent("click", function () {
-			visualPrecise = !visualPrecise;
+		butMode.updateLabel = function() {
 			if (visualPrecise) {
 				butMode.set("html", "<b>VISUAL</b>/<strike>precise</strike>");
 			} else {
 				butMode.set("html", "<strike>visual</strike>/<b>PRECISE</b>");
 			}
+		};
+		butMode.addEvent("click", function () {
+			visualPrecise = !visualPrecise;
+			butMode.updateLabel();
 		});
 
 		// frame numbers to bump slider step when recording automatically
@@ -284,7 +291,6 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * worker queue
 		 */
-		let numTicks = 0;
 		let myTick = function () {
 			let delay = 0;
 			const ms = Date.now();
@@ -303,7 +309,7 @@ let AY = <span id="curveAY"></span>;
 					let ret = followCurve.tick();
 
 					// update stats
-					document.id("txt").set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
+					txtStatus.set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
 
 					if (ret) {
 						// call again
@@ -438,8 +444,8 @@ let AY = <span id="curveAY"></span>;
 				followCurve.drawCurvePoints(ctx, 2, "#00f");
 			}
 
-			document.id("curveAX").set("text", JSON.encode(followCurve.AX));
-			document.id("curveAY").set("text", JSON.encode(followCurve.AY));
+			txtAX.set("text", JSON.encode(followCurve.AX));
+			txtAY.set("text", JSON.encode(followCurve.AY));
 
 			// next frame
 			if (automated.length)

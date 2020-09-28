@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-28 23:44:34 DOM optimisations `docs/resize`.
 2020-09-28 23:33:04 Added simple player for `replayLog`.
 2020-09-28 15:41:50 Added `replayLog` for `docs/resize` and updated previews.
 2020-09-28 01:50:51 Webp previews.
