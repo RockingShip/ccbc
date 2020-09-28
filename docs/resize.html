@@ -99,6 +99,9 @@ let AY = <span id="curveAY"></span>;
 <p>"Visual/precise" changes how/where control points are added/removed.</p>
 <p>You can also choose to copy/store/save the replay log below:</p>
 <textarea id="txtReplayLog" rows="3" cols="10"></textarea>
+<button id="butReplay"><b>STOP</b>/<strike>play</strike></button>
+<div id="txtReplayStatus"></div>
+
 
 <script type="text/javascript">
 
@@ -107,6 +110,13 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * Create UI
 		 */
+
+		const butReplay = document.id("butReplay");
+		const txtReplayLog = document.id('txtReplayLog');
+		const txtReplayStatus = document.id('txtReplayStatus');
+
+		let visualPrecise = true; // default to visual
+		let stopPlay = true; // default to stop
 
 		// get size of SVG
 		let svg = document.id("svg");
@@ -151,7 +161,9 @@ let AY = <span id="curveAY"></span>;
 			followCurve.totalError = followCurve.compare();
 		});
 		window.pads.updatePads(followCurve.AX, followCurve.AY);
-		window.frameNr = 0;
+
+		let frameNr = 0; // current frame number
+		let tickNr = 0; // current worker tick number
 
 		/*
 		 * activate slider
@@ -172,7 +184,6 @@ let AY = <span id="curveAY"></span>;
 		/*
 		 * activate mode button
 		 */
-		let visualPrecise = true; // default to visual
 		const butMode = document.id("butMode");
 		butMode.addEvent("click", function () {
 			visualPrecise = !visualPrecise;
@@ -188,22 +199,86 @@ let AY = <span id="curveAY"></span>;
 		if (0) {
 			visualPrecise = true; // visual mode
 			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*16, 14*17-2, 14*18, 14*19+2, 14*20, 14*21+2, 14*22, 14*23, 14*24, 14*25, 600];
+			slider.isDragging = true;
 		} else if (0) {
 			visualPrecise = false; // precise mode
 			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13+1, 14*14, 14*15+2, 14*16, 14*17, 14*18, 14*19-1, 14*20+2, 450];
 			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13, 14*14, 14*15+2, 14*16, 14*17, 14*18+2, 14*19, 14*20+2, 450];
-		}
-		if (automated.length)
 			slider.isDragging = true;
+		}
 
 		/*
 		 * Replay log
+		 * NOTE: this captures the current curve and worker state, no value passing through arguments
 		 */
+		let replayTrail = undefined; // current replay trail
+		let replayFrame = undefined; // current replay frame
+		let replayTick = undefined; // Current tick for frame
 		let replayLog = {
 			width : width,
 			height: height,
-			visualPrecise: visualPrecise,
 			trails: [],
+			beginTrail: function() {
+				// capture current settings as new trail
+				// NOTE: if current trail is empty, just update settings
+				if (this.trails.length === 0 || this.trails[this.trails.length - 1].frames.length > 0) {
+					// last trail was non-empty
+					this.trails.push({
+						AX: followCurve.AX.slice(),
+						AY: followCurve.AY.slice(),
+						contourAX: followCurve.contourAX.slice(),
+						contourAY: followCurve.contourAY.slice(),
+						frames: []
+					});
+				} else {
+					// update
+					this.trails[this.trails.length - 1].AX = followCurve.AX.slice();
+					this.trails[this.trails.length - 1].AY = followCurve.AY.slice();
+				}
+				tickNr = 0;
+
+			},
+			addTick: function() {
+				if (this.trails.length) {
+					// append sync point if it changed
+					const frames = this.trails[this.trails.length - 1].frames;
+					if (tickNr === 0)
+						return; // worker is still sleeping
+					if (frames.length === 0)
+						frames.push(tickNr);
+					else if (tickNr < frames[frames.length - 1])
+						alert(1);
+					else if (tickNr !== frames[frames.length - 1])
+						frames.push(tickNr);
+				}
+			},
+			loadTrail: function(trail) {
+				// create contour curve
+				followCurve.AX = trail.contourAX.slice();
+				followCurve.AY = trail.contourAY.slice();
+				// prepare curve
+				followCurve.calcControlsClosed(followCurve.AX, followCurve.BX, followCurve.CX);
+				followCurve.calcControlsClosed(followCurve.AY, followCurve.BY, followCurve.CY);
+				// capture contour
+				let controlLength = followCurve.calcControlLength(); // determine control net length
+				followCurve.captureContour(controlLength * followCurve.ratioContour, followCurve.contourX, followCurve.contourY);
+
+				// create curve
+				followCurve.AX = trail.AX.slice();
+				followCurve.AY = trail.AY.slice();
+				// prepare curve
+				followCurve.calcControlsClosed(followCurve.AX, followCurve.BX, followCurve.CX);
+				followCurve.calcControlsClosed(followCurve.AY, followCurve.BY, followCurve.CY);
+				// prepare compare
+				followCurve.compareInit(followCurve.contourX.length * followCurve.ratioCompare, followCurve.contourX, followCurve.contourY);
+				followCurve.totalError = followCurve.compare();
+
+				// Test that `this.pt` is within bounds of 0<=pt<bN
+				if (followCurve.pt >= followCurve.AX.length)
+					followCurve.pt = followCurve.AX.length - 1;
+
+				tickNr = 0;
+			}
 		};
 
 		/*
@@ -215,10 +290,16 @@ let AY = <span id="curveAY"></span>;
 			const ms = Date.now();
 
 			do {
-				if (!slider.isDragging) {
-					delay = 500; // only fit contour when dragging
+				if (replayTick !== undefined && tickNr >= replayTick) {
+					// wait for sync from `draw()`
+					delay = 10;
+					break;
+				} else if (!slider.isDragging) {
+					// only fit contour when dragging
+					delay = 500;
+					break;
 				} else {
-					// update on-curve controls for better fit
+					// do something
 					let ret = followCurve.tick();
 
 					// update stats
@@ -226,11 +307,12 @@ let AY = <span id="curveAY"></span>;
 
 					if (ret) {
 						// call again
-						numTicks++;
+						tickNr++;
 						delay = 0;
 					} else {
 						// nothing changed
 						delay = 500;
+						break;
 					}
 				}
 			} while (Date.now() - ms < 10);
@@ -244,8 +326,40 @@ let AY = <span id="curveAY"></span>;
 		let lastSliderStep = 0; // last slider position
 		setInterval(function () {
 			// draw frame
-			ctx.fillStyle = "#eee"
-			ctx.fillRect(0, 0, width, height);
+
+			// test for replay mode
+			if (replayTrail !== undefined) {
+
+				let trail = replayLog.trails[replayTrail];
+
+				// bump to next frame
+				replayFrame++
+				if (replayFrame >= trail.frames.length) {
+					// bump to next trail
+					replayTrail++;
+					if (replayTrail >= replayLog.trails.length) {
+						// end of replay log
+						stopPlay = true;
+						butReplay.updateLabel();
+						replayTrail = undefined;
+						replayFrame = undefined;
+						replayTick = undefined;
+						slider.isDragging = false;
+						tickNr = 0; // set tickNr to zero so the release does not get logged and corrupts replayLog
+					} else {
+						// set start new trail
+						trail = replayLog.trails[replayTrail];
+						replayLog.loadTrail(trail);
+						replayTick = trail.frames.length === 0 ? 0 : trail.frames[0];
+						replayFrame = 0;
+					}
+				} else {
+					// get next sync point
+					replayTick = trail.frames[replayFrame];
+				}
+			}
+
+			// test for slider mode
 			if (slider.isDragging) {
 				// slide gesture
 				if (window.pads.pads.length) {
@@ -262,13 +376,8 @@ let AY = <span id="curveAY"></span>;
 					followCurve.contourAY = followCurve.AY.slice();
 				}
 
-				// last save to replayLog
-				if (replayLog.trails.length) {
-					// append sync point if it changed
-					const ticks = replayLog.trails[replayLog.trails.length - 1].ticks;
-					if (ticks.length === 0 || ticks[ticks.length - 1] !== numTicks)
-						ticks.push(numTicks);
-				}
+				if (replayTrail === undefined)
+					replayLog.addTick();
 
 				// update automatic recording
 				if (frameNr >= automated[0]) {
@@ -291,22 +400,8 @@ let AY = <span id="curveAY"></span>;
 						document.id("numControls").set("text", "numControls=" + slider.step);
 					}
 
-					// add new coordinate trail to replayLog
-					if (replayLog.trails.length === 0 || replayLog.trails[replayLog.trails.length - 1].ticks.length > 0) {
-						// add new starting situation
-						replayLog.trails.push({
-							AX: followCurve.AX.slice(),
-							AY: followCurve.AY.slice(),
-							contourAX: followCurve.contourAX.slice(),
-							contourAY: followCurve.contourAY.slice(),
-							ticks: []
-						});
-					} else {
-						// update last marker
-						replayLog.trails[replayLog.trails.length - 1].AX = followCurve.AX.slice();
-						replayLog.trails[replayLog.trails.length - 1].AY = followCurve.AY.slice();
-					}
-					numTicks = 0;
+					if (replayTrail === undefined)
+						replayLog.beginTrail();
 
 					lastSliderStep = slider.step;
 				}
@@ -316,23 +411,21 @@ let AY = <span id="curveAY"></span>;
 					// end of slide gesture
 
 					// last save to replayLog
-					if (replayLog.trails.length) {
-						// append sync point if it changed
-						const ticks = replayLog.trails[replayLog.trails.length - 1].ticks;
-						if (ticks.length === 0 || ticks[ticks.length - 1] !== numTicks)
-							ticks.push(numTicks);
-					}
+					if (replayTrail === undefined)
+						replayLog.addTick();
 
 					// show pads
 					window.pads.updatePads(followCurve.AX, followCurve.AY);
 					// update replay log
-					document.id("txtReplayLog").set("text", JSON.encode(replayLog));
+					txtReplayLog.value = JSON.encode(replayLog);
 					// invalidate last position
 					lastSliderStep = 0;
 				}
 			}
 
 			// draw curve depending on in curve/contour mode
+			ctx.fillStyle = "#eee"
+			ctx.fillRect(0, 0, width, height);
 			if (slider.isDragging) {
 				// contour matching
 				followCurve.drawCompare(ctx);
@@ -352,8 +445,57 @@ let AY = <span id="curveAY"></span>;
 			if (automated.length)
 				document.id("txt2").set("text", "frame="+frameNr);
 
-			window.frameNr++;
+			frameNr++;
 		}, 1000 / 25);
+
+		/*
+		 * Replay button
+		 */
+		butReplay.updateLabel = function() {
+			if (stopPlay) {
+				butReplay.set("html", "<b>STOP</b>/<strike>play</strike>");
+			} else {
+				butReplay.set("html", "<strike>stop</strike>/<b>PLAY</b>");
+			}
+		};
+		butReplay.addEvent("click", function () {
+			if (stopPlay) {
+				// capture context of textarea
+				let json = undefined;
+				try {
+					json = JSON.parse(txtReplayLog.value);
+				} catch (e) {
+					json = undefined;
+				}
+				if (!json || !json.trails) {
+					// failed to load
+					txtReplayStatus.set("text", "Cannot parse JSON");
+				} else {
+					// make load new replayLog
+					replayLog.trails = json.trails;
+
+					// start replay
+					stopPlay = !stopPlay;
+					butReplay.updateLabel();
+
+					// start playback
+					replayTrail = 0;
+					replayFrame = 0;
+					replayTick = 0;
+					replayLog.loadTrail(replayLog.trails[0]);
+					slider.isDragging = true;
+				}
+			} else if (!stopPlay) {
+				// stop replay
+				stopPlay = !stopPlay;
+				butReplay.updateLabel();
+				replayTrail = undefined;
+				replayFrame = undefined;
+				replayTick = undefined;
+				slider.isDragging = false;
+				tickNr = 0; // set tickNr to zero so the release does not get logged and corrupts replayLog
+			}
+		});
 
 	});
 </script>
