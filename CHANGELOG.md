@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-28 01:50:51 Webp previews.
 2020-09-28 01:46:07 Dropped `resize` alternatives.
 2020-09-27 23:16:36 Added scripted SVG `docs/embed.*`.
 2020-09-27 09:53:40 `resize.decreaseControls()` did not update `this.pt`.

@@ -18,10 +18,10 @@ Samples: (Click image to open interactive version)
 [![Animated](docs/animated.gif)](https://RockingShip.github.io/ccbc/animated.html)
 Basic bezier with on-curve control points.
 
-[![Compare](docs/compare.gif)](https://RockingShip.github.io/ccbc/compare.html)
+[![Compare](docs/compare.webp)](https://RockingShip.github.io/ccbc/compare.html)
 Compare between Bezier curve and coordinate vector.
 
-[![Resize](docs/resize.png)](https://RockingShip.github.io/ccbc/resize.html)
+[![Resize](docs/resize.webp)](https://RockingShip.github.io/ccbc/resize.html)
 Bezier curve with dynamic number of composite sections.
 
 # Requirements
