@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-29 12:56:46 Drop `docs/resize` dysfunctional radius and replace with resizing to center.
 2020-09-28 23:44:34 DOM optimisations `docs/animated`.
 2020-09-29 00:10:09 Added "animated/vanilla" mode to `docs/animated`.
 2020-09-28 23:44:34 DOM optimisations `docs/resize`.
