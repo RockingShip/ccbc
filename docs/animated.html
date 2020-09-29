@@ -59,6 +59,8 @@
 <p>Interactive demonstration on how a closed path is calculated and plotted.</p>
 <p>Move the black dots on the blue line with your mouse/finger.</p>
 
+<button id="butMode"><b>ANIMATED</b>/<strike>vanilla</strike></button>
+
 <div id="wrapper">
 	<canvas id="animated"></canvas>
 	<svg id="svg" width="500px" height="500px">
@@ -73,6 +75,11 @@
 
 <script type="text/javascript">
 	window.addEvent('domready', function () {
+		let animatedVanilla = true; // default to animated
+
+		// get size of SVG
+		const butMode = document.id("butMode");
+
 		// get size of SVG
 		let svg = document.id("svg");
 		let rect = svg.getBoundingClientRect();
@@ -96,7 +103,9 @@
 		let context = canvas.getContext("2d");
 
 		// draw initial state
-		curve.draw(context, 0, width, height);
+		context.fillStyle = '#eee'
+		context.fillRect(0, 0, width, height)
+		curve.draw(context, 0, context);
 
 		let x0 = 0, y0 = 0;
 		let elx = -1, ely = -1;
@@ -156,7 +165,12 @@
 		let t = 0;
 		setInterval(function () {
 			t += 50;
-			curve.draw(context, t / 5000, width, height);
+
+			// erase and draw
+			context.fillStyle = '#eee'
+			context.fillRect(0, 0, width, height)
+			curve.draw(context, t / 5000, animatedVanilla);
+
 			t %= 5000;
 		}, 50);
 
@@ -174,6 +188,22 @@
 		document.id('svg').addEvent('touchend', function (event) {
 			this.fireEvent('mouseup', event);
 		});
+
+		/*
+		 * activate mode button
+		 */
+		butMode.updateLabel = function() {
+			if (visualPrecise) {
+				butMode.set("html", "<b>ANIMATED</b>/<strike>vanilla</strike>");
+			} else {
+				butMode.set("html", "<strike>animated</strike>/<b>VANILLA</b>");
+			}
+		};
+		butMode.addEvent("click", function () {
+			animatedVanilla = !animatedVanilla;
+			butMode.updateLabel();
+		});
+
 	});
 </script>
 

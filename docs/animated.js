@@ -59,14 +59,10 @@ function Curve() {
 		}
 	};
 
-	this.draw = function (ctx, t, width, height) {
+	this.draw = function (ctx, t, animatedVanilla) {
 		let A = this.A;
 		let B = this.B;
 		let C = this.C;
-
-		// erase canvas
-		ctx.fillStyle = '#eee'
-		ctx.fillRect(0, 0, width, height)
 
 		// display curve
 		ctx.beginPath();
@@ -79,6 +75,23 @@ function Curve() {
 		ctx.bezierCurveTo(B[3].x, B[3].y, C[3].x, C[3].y, A[4].x, A[4].y);
 		ctx.bezierCurveTo(B[4].x, B[4].y, C[4].x, C[4].y, A[0].x, A[0].y);
 		ctx.stroke();
+
+		if (!animatedVanilla) {
+			// draw traditional control spoke
+
+			ctx.beginPath();
+			ctx.strokeStyle = '#0f0';
+			ctx.lineWidth = 2;
+			for (let i = 0; i < 5; i++) {
+				ctx.moveTo(A[(i+1)%5].x, A[(i+1)%5].y);
+				ctx.lineTo(B[(i+1)%5].x, B[(i+1)%5].y);
+				ctx.lineTo(C[i].x, C[i].y);
+			}
+			ctx.closePath();
+			ctx.stroke();
+
+			return;
+		}
 
 		/*
 		 * outer guides
@@ -192,8 +205,13 @@ if (typeof window === 'undefined') {
 
 	// 50mSec / frame = 20fps
 	for (let t = 0; t < 100; t++) {
+		// erase canvas
+		ctx.fillStyle = '#eee'
+		ctx.fillRect(0, 0, width, height)
+
 		// draw
-		curve.draw(ctx, t / 100, width, height);
+		curve.draw(ctx, t / 100, true);
+
 		// save
 		let buffer = canvas.toBuffer('image/png')
 		fs.writeFileSync('animated-' + Math.trunc(t / 10) + (t % 10) + '.png', buffer)
