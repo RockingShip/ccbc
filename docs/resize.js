@@ -213,22 +213,22 @@ function Curve() {
 			// Odd N
 			for (let j = 0; j < N; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j - 1 + N) % N]) * 41 - (A[(j + 2) % N] - A[(j - 2 + N) % N]) * 11 + (A[(j + 3) % N] - A[(j - 3 + N) % N]) * 3 - (A[(j + 4) % N] - A[(j - 4 + N) % N])) / 153;
-		} else if (N == 8) {
+		} else if (N === 8) {
 			for (let j = 0; j < 8; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 7) % N]) * 15 - (A[(j + 2) % N] - A[(j + 6) % N]) * 4 + (A[(j + 3) % N] - A[(j + 5) % N])) / 56;
-		} else if (N == 7) {
+		} else if (N === 7) {
 			for (let j = 0; j < 7; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 6) % N]) * 11 - (A[(j + 2) % N] - A[(j + 5) % N]) * 3 + (A[(j + 3) % N] - A[(j + 4) % N])) / 41;
-		} else if (N == 6) {
+		} else if (N === 6) {
 			for (let j = 0; j < 6; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 5) % N]) * 4 - (A[(j + 2) % N] - A[(j + 4) % N])) / 15;
-		} else if (N == 5) {
+		} else if (N === 5) {
 			for (let j = 0; j < 5; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 4) % N]) * 3 - (A[(j + 2) % N] - A[(j + 3) % N])) / 11;
-		} else if (N == 4) {
+		} else if (N === 4) {
 			for (let j = 0; j < 4; j++)
 				B[j] = A[j] + (A[(j + 1) % N] - A[(j + 3) % N]) / 4;
-		} else if (N == 3) {
+		} else if (N === 3) {
 			for (let j = 0; j < 3; j++)
 				B[j] = A[j] + (A[(j + 1) % N] - A[(j + 2) % N]) / 3;
 		} else {
@@ -458,19 +458,6 @@ function Curve() {
 
 		// populate the above arrays
 		this.updateControls();
-
-		// validate segment length
-		for (let i = 0; i < sN; i++) {
-			const iPlus1 = (i + 1) % sN;
-
-			let len = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
-				len += fragLen[k];
-
-			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR1: " + i + " " + (len - segLen[i]));
-		}
-
 	}
 
 	/*
@@ -498,16 +485,18 @@ function Curve() {
 
 		this.numCompare++;
 
-		// validate segment length
-		for (let i = 0; i < sN; i++) {
-			const iPlus1 = (i + 1) % sN;
+		if (0) {
+			// validate segment length
+			for (let i = 0; i < sN; i++) {
+				const iPlus1 = (i + 1) % sN;
 
-			let len = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
-				len += fragLen[k];
+				let len = 0;
+				for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
+					len += fragLen[k];
 
-			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR2: " + i + " " + (len - segLen[i]));
+				if (Math.abs((len - segLen[i])) > 1e-10)
+					console.log("ERROR2: " + i + " " + (len - segLen[i]));
+			}
 		}
 
 
@@ -647,18 +636,6 @@ function Curve() {
 			// console.log('changed:' + totalError + ' ' + x++)
 		} while (changed);
 
-
-		// validate segment length
-		for (let i = 0; i < sN; i++) {
-			const iPlus1 = (i + 1) % sN;
-
-			let len = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fN)
-				len += fragLen[k];
-
-			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR3: " + i + " " + (len - segLen[i]));
-		}
 
 		return totalError;
 	}

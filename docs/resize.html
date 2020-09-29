@@ -93,6 +93,8 @@
 
 <pre>
 // curve control points
+let contourAX = <span id="txtContourAX"></span>;
+let contourAY = <span id="txtContourAY"></span>;
 let AX = <span id="txtAX"></span>;
 let AY = <span id="txtAY"></span>;
 </pre>
@@ -119,6 +121,8 @@ let AY = <span id="txtAY"></span>;
 		const txtReplayStatus = document.id('txtReplayStatus');
 		const txtAX = document.id("txtAX")
 		const txtAY = document.id("txtAY")
+		const txtContourAX = document.id("txtContourAX")
+		const txtContourAY = document.id("txtContourAY")
 		const txtStatus = document.id("txtStatus")
 
 		let visualPrecise = true; // default to visual
@@ -209,8 +213,8 @@ let AY = <span id="txtAY"></span>;
 			slider.isDragging = true;
 		} else if (0) {
 			visualPrecise = false; // precise mode
-			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13+1, 14*14, 14*15+2, 14*16, 14*17, 14*18, 14*19-1, 14*20+2, 450];
-			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13, 14*14, 14*15+2, 14*16, 14*17, 14*18+2, 14*19, 14*20+2, 450];
+			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13, 14*14, 14*15, 14*16, 14*17, 14*18, 14*19, 14*20, 450];
+			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13, 14*14, 14*15, 14*16, 14*17, 14*18, 14*19, 14*20, 450];
 			slider.isDragging = true;
 		}
 
@@ -446,6 +450,8 @@ let AY = <span id="txtAY"></span>;
 
 			txtAX.set("text", JSON.encode(followCurve.AX));
 			txtAY.set("text", JSON.encode(followCurve.AY));
+			txtContourAX.set("text", JSON.encode(followCurve.contourAX));
+			txtContourAY.set("text", JSON.encode(followCurve.contourAY));
 
 			// next frame
 			if (automated.length)
@@ -477,6 +483,8 @@ let AY = <span id="txtAY"></span>;
 					// failed to load
 					txtReplayStatus.set("text", "Cannot parse JSON");
 				} else {
+					txtReplayStatus.set("text", "");
+
 					// make load new replayLog
 					replayLog.trails = json.trails;
 
@@ -488,7 +496,9 @@ let AY = <span id="txtAY"></span>;
 					replayTrail = 0;
 					replayFrame = 0;
 					replayTick = 0;
+					window.pads.updatePads([], []);
 					replayLog.loadTrail(replayLog.trails[0]);
+					window.pads.updatePads(followCurve.AX, followCurve.AY);
 					slider.isDragging = true;
 				}
 			} else if (!stopPlay) {

@@ -25,10 +25,9 @@ Samples: (Click image to open interactive version)
 
 ## Bezier curve with dynamic number of composite sections.
 
-Top in "visual" mode, bottom in "precise" mode.
+Left in "visual" mode, right in "precise" mode.
 
-[![Resize](docs/resizeV.webp)](https://RockingShip.github.io/ccbc/resize.html)
-[![Resize](docs/resizeP.webp)](https://RockingShip.github.io/ccbc/resize.html)
+[![Resize](docs/resizeV.webp)](https://RockingShip.github.io/ccbc/resize.html) [![Resize](docs/resizeP.webp)](https://RockingShip.github.io/ccbc/resize.html)
 
 # Requirements
 
