@@ -80,14 +80,13 @@
 		// get size of SVG
 		const butMode = document.id("butMode");
 
-		// get size of SVG
-		let svg = document.id("svg");
-		let rect = svg.getBoundingClientRect();
-		let width = rect.width;
-		let height = rect.height;
+		const domSvg = document.id("svg");
+		const svgRect = domSvg.getBoundingClientRect();
+		let width = svgRect.width;
+		let height = svgRect.height;
 
 		// calculate control points
-		let curve = new Curve();
+		const curve = new Curve();
 		curve.calc();
 
 		// load path points
@@ -95,17 +94,17 @@
 		document.id('txtB').set('text', JSON.encode(curve.B));
 
 		// create canvas
-		let canvas = document.id('animated');
+		const canvas = document.id('animated');
 		canvas.width = width;
 		canvas.height = height;
 
 		// access graphics context
-		let context = canvas.getContext("2d");
+		const ctx = canvas.getContext("2d");
 
 		// draw initial state
-		context.fillStyle = '#eee'
-		context.fillRect(0, 0, width, height)
-		curve.draw(context, 0, context);
+		ctx.fillStyle = '#eee'
+		ctx.fillRect(0, 0, width, height)
+		curve.draw(ctx, 0, animatedVanilla);
 
 		let x0 = 0, y0 = 0;
 		let elx = -1, ely = -1;
@@ -167,9 +166,9 @@
 			t += 50;
 
 			// erase and draw
-			context.fillStyle = '#eee'
-			context.fillRect(0, 0, width, height)
-			curve.draw(context, t / 5000, animatedVanilla);
+			ctx.fillStyle = '#eee'
+			ctx.fillRect(0, 0, width, height)
+			curve.draw(ctx, t / 5000, animatedVanilla);
 
 			t %= 5000;
 		}, 50);
