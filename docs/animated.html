@@ -77,10 +77,11 @@
 	window.addEvent('domready', function () {
 		let animatedVanilla = true; // default to animated
 
-		// get size of SVG
 		const butMode = document.id("butMode");
-
 		const domSvg = document.id("svg");
+		const domCanvas = document.id('animated');
+
+		// get size of SVG
 		const svgRect = domSvg.getBoundingClientRect();
 		let width = svgRect.width;
 		let height = svgRect.height;
@@ -94,12 +95,11 @@
 		document.id('txtB').set('text', JSON.encode(curve.B));
 
 		// create canvas
-		const canvas = document.id('animated');
-		canvas.width = width;
-		canvas.height = height;
+		domCanvas.width = width;
+		domCanvas.height = height;
 
 		// access graphics context
-		const ctx = canvas.getContext("2d");
+		const ctx = domCanvas.getContext("2d");
 
 		// draw initial state
 		ctx.fillStyle = '#eee'
@@ -130,7 +130,7 @@
 				curel = this;
 			});
 			dots[i].addEvent('mousemove', function (event) {
-				if (curel != 0) {
+				if (curel !== 0) {
 					let x = elx + event.client.x - x0;
 					let y = ely + event.client.y - y0;
 					if (x < 0) x = 0;
@@ -175,7 +175,7 @@
 
 		// container mousemove handler (in case mouse moves outside dot during gesture)
 		document.id('svg').addEvent('mousemove', function (event) {
-			if (curel != 0)
+			if (curel !== 0)
 				curel.fireEvent('mousemove', event);
 		});
 		document.id('svg').addEvent('mouseup', function (event) {
@@ -192,7 +192,7 @@
 		 * activate mode button
 		 */
 		butMode.updateLabel = function() {
-			if (visualPrecise) {
+			if (animatedVanilla) {
 				butMode.set("html", "<b>ANIMATED</b>/<strike>vanilla</strike>");
 			} else {
 				butMode.set("html", "<strike>animated</strike>/<b>VANILLA</b>");
@@ -213,29 +213,23 @@ let A = <span id="txtA"></span>;
 //  B = <span id="txtB"></span>;
 
 // coefficients for a 5 point closed path
-let c0 =  3.0/11.0;
-let c1 = -1.0/11.0;
-let c2 =  1.0/11.0;
-let c3 = -3.0/11.0;
-let c4 =  1;
+const N = 5;
+const c0 =  3.0 / 11.0;
+const c1 = -1.0 / 11.0;
+const c2 =  1.0 / 11.0;
+const c3 = -3.0 / 11.0;
+const c4 =  1;
 
-// calculate first control point
-let B = [
-  { x: A[1].x*c0 + A[2].x*c1 + A[3].x*c2 + A[4].x*c3 + A[0].x*c4 ,
-    y: A[1].y*c0 + A[2].y*c1 + A[3].y*c2 + A[4].y*c3 + A[0].y*c4 },
-  { x: A[2].x*c0 + A[3].x*c1 + A[4].x*c2 + A[0].x*c3 + A[1].x*c4 ,
-    y: A[2].y*c0 + A[3].y*c1 + A[4].y*c2 + A[0].y*c3 + A[1].y*c4 },
-  { x: A[3].x*c0 + A[4].x*c1 + A[0].x*c2 + A[1].x*c3 + A[2].x*c4 ,
-    y: A[3].y*c0 + A[4].y*c1 + A[0].y*c2 + A[1].y*c3 + A[2].y*c4 },
-  { x: A[4].x*c0 + A[0].x*c1 + A[1].x*c2 + A[2].x*c3 + A[3].x*c4 ,
-    y: A[4].y*c0 + A[0].y*c1 + A[1].y*c2 + A[2].y*c3 + A[3].y*c4 },
-  { x: A[0].x*c0 + A[1].x*c1 + A[2].x*c2 + A[3].x*c3 + A[4].x*c4 ,
-    y: A[0].y*c0 + A[1].y*c1 + A[2].y*c2 + A[3].y*c3 + A[4].y*c4 } ];
+// calculate B[] control points
+for (let i = 0; i < N; i++) {
+	B[i] = { x: A[(i + 1) % N].x * c0 + A[(i + 2) % N].x * c1 + A[(i + 3) % N].x * c2 + A[(i + 4) % N].x * c3 + A[i].x * c4,
+		 y: A[(i + 1) % N].y * c0 + A[(i + 2) % N].y * c1 + A[(i + 3) % N].y * c2 + A[(i + 4) % N].y * c3 + A[i].y * c4 };
+}
 
-// optionally mirror to second control point
+// mirror to C[] control point
 for (let i = 0; i < 5; i++) {
-  C[i] = { x: 2 * A[(i + 1) % 5].x - B[(i + 1) % 5].x,
-           y: 2 * A[(i + 1) % 5].y - B[(i + 1) % 5].y };
+	C[i] = { x: 2 * A[(i + 1) % N].x - B[(i + 1) % N].x,
+		 y: 2 * A[(i + 1) % N].y - B[(i + 1) % N].y };
 }
 </pre>
 
