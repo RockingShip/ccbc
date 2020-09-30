@@ -210,19 +210,8 @@ let AY = <span id="txtAY"></span>;
 		// NOTE: turns out this is CPU and canvas size dependent (AMD FX-8320E)
 		let automated = [];
 		if (0) {
-			// for 400x400
 			visualPrecise = false; // visual mode
-			automated = [8 * 1, 8 * 2, 8 * 3, 8 * 4, 8 * 5, 8 * 6, 8 * 7, 8 * 8, 8 * 9, 8 * 10, 8 * 11, 8 * 12, 8 * 13, 8 * 14, 8 * 15, 8 * 16, 8 * 17, 8 * 18, 8 * 19, 8 * 20, 600];
-			slider.isDragging = true;
-		} else if (0) {
-			// for 500x500 visual
-			visualPrecise = true; // visual mode
-			automated = [14 * 1, 14 * 2, 14 * 3, 14 * 4, 14 * 5, 14 * 6, 14 * 7, 14 * 8, 14 * 9, 14 * 10, 14 * 16, 14 * 17, 14 * 18, 14 * 19, 14 * 20, 14 * 21, 14 * 22, 14 * 23, 14 * 24, 14 * 25, 600];
-			slider.isDragging = true;
-		} else if (0) {
-			// for 500x500 precise
-			visualPrecise = false; // precise mode
-			automated = [14 * 1, 14 * 2, 14 * 3, 14 * 4, 14 * 5, 14 * 6, 14 * 7, 14 * 8, 14 * 9, 14 * 10, 14 * 11, 14 * 12, 14 * 13, 14 * 14, 14 * 15, 14 * 16, 14 * 17, 14 * 18, 14 * 19, 14 * 20, 450];
+			automated = [12 * 1, 12 * 2, 12 * 3, 12 * 4, 12 * 5, 12 * 6, 12 * 7, 12 * 8, 12 * 9, 12 * 10, 12 * 11, 12 * 12, 12 * 13, 12 * 14, 12 * 15, 12 * 16, 12 * 17, 12 * 18, 12 * 19, 12 * 20, 450];
 			slider.isDragging = true;
 		}
 
@@ -307,6 +296,7 @@ let AY = <span id="txtAY"></span>;
 		let myTick = function () {
 			let delay = 0;
 			const ms = Date.now();
+			const startTickNr = tickNr;
 
 			do {
 				if (replayTick !== undefined && tickNr >= replayTick) {
@@ -328,6 +318,10 @@ let AY = <span id="txtAY"></span>;
 						// call again
 						tickNr++;
 						delay = 0;
+
+						// if playing a pre-recording throttle to 10 ticks per second
+						if (automated && tickNr - startTickNr >= 6)
+							break;
 					} else {
 						// nothing changed
 						delay = 500;

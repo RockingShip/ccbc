@@ -222,14 +222,15 @@ const c4 =  1;
 
 // calculate B[] control points
 for (let i = 0; i < N; i++) {
-	B[i] = { x: A[(i + 1) % N].x * c0 + A[(i + 2) % N].x * c1 + A[(i + 3) % N].x * c2 + A[(i + 4) % N].x * c3 + A[i].x * c4,
-		 y: A[(i + 1) % N].y * c0 + A[(i + 2) % N].y * c1 + A[(i + 3) % N].y * c2 + A[(i + 4) % N].y * c3 + A[i].y * c4 };
+	B[i].x = A[(i + 1) % N].x * c0 + A[(i + 2) % N].x * c1 + A[(i + 3) % N].x * c2 + A[(i + 4) % N].x * c3 + A[i].x * c4;
+	B[i].y = A[(i + 1) % N].y * c0 + A[(i + 2) % N].y * c1 + A[(i + 3) % N].y * c2 + A[(i + 4) % N].y * c3 + A[i].y * c4;
 }
+
 
 // mirror to C[] control point
 for (let i = 0; i < 5; i++) {
-	C[i] = { x: 2 * A[(i + 1) % N].x - B[(i + 1) % N].x,
-		 y: 2 * A[(i + 1) % N].y - B[(i + 1) % N].y };
+	C[i].x = 2 * A[(i + 1) % 5].x - B[(i + 1) % 5].x;
+	C[i].y = 2 * A[(i + 1) % 5].y - B[(i + 1) % 5].y;
 }
 </pre>
 

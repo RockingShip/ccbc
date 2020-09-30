@@ -26,33 +26,30 @@ function Curve() {
 		let A = this.A;
 		let B = this.B;
 		let C = this.C;
+		const N = A.length;
 
 		// coefficients for a 5 point closed path
-		let c0 = 3.0 / 11.0;
-		let c1 = -1.0 / 11.0;
-		let c2 = 1.0 / 11.0;
-		let c3 = -3.0 / 11.0;
-		let c4 = 1;
+		const c0 = 3.0 / 11.0;
+		const c1 = -1.0 / 11.0;
+		const c2 = 1.0 / 11.0;
+		const c3 = -3.0 / 11.0;
+		const c4 = 1;
 
 		// determine first control point
-		B = this.B = [
-			{ x: A[1].x*c0 + A[2].x*c1 + A[3].x*c2 + A[4].x*c3 + A[0].x*c4 ,
-			  y: A[1].y*c0 + A[2].y*c1 + A[3].y*c2 + A[4].y*c3 + A[0].y*c4 },
-			{ x: A[2].x*c0 + A[3].x*c1 + A[4].x*c2 + A[0].x*c3 + A[1].x*c4 ,
-			  y: A[2].y*c0 + A[3].y*c1 + A[4].y*c2 + A[0].y*c3 + A[1].y*c4 },
-			{ x: A[3].x*c0 + A[4].x*c1 + A[0].x*c2 + A[1].x*c3 + A[2].x*c4 ,
-			  y: A[3].y*c0 + A[4].y*c1 + A[0].y*c2 + A[1].y*c3 + A[2].y*c4 },
-			{ x: A[4].x*c0 + A[0].x*c1 + A[1].x*c2 + A[2].x*c3 + A[3].x*c4 ,
-			  y: A[4].y*c0 + A[0].y*c1 + A[1].y*c2 + A[2].y*c3 + A[3].y*c4 },
-			{ x: A[0].x*c0 + A[1].x*c1 + A[2].x*c2 + A[3].x*c3 + A[4].x*c4 ,
-			  y: A[0].y*c0 + A[1].y*c1 + A[2].y*c2 + A[3].y*c3 + A[4].y*c4 }
-		];
+		B.length = N;
+		for (let i = 0; i < N; i++) {
+			B[i] = { x: A[(i + 1) % N].x * c0 + A[(i + 2) % N].x * c1 + A[(i + 3) % N].x * c2 + A[(i + 4) % N].x * c3 + A[i].x * c4,
+				 y: A[(i + 1) % N].y * c0 + A[(i + 2) % N].y * c1 + A[(i + 3) % N].y * c2 + A[(i + 4) % N].y * c3 + A[i].y * c4 }
+		}
 
 		// snap to grid
-		for (let i = 0; i < 5; i++)
-			B[i] = {x: Math.round(B[i].x), y: Math.round(B[i].y)};
+		for (let i = 0; i < 5; i++) {
+			B[i].x = Math.round(B[i].x);
+			B[i].y = Math.round(B[i].y);
+		}
 
 		// mirror to second control point (only needed for encoded path string)
+		C.length = N;
 		for (let i = 0; i < 5; i++) {
 			C[i] = { x: 2 * A[(i + 1) % 5].x - B[(i + 1) % 5].x,
 				 y: 2 * A[(i + 1) % 5].y - B[(i + 1) % 5].y };
@@ -83,8 +80,8 @@ function Curve() {
 			ctx.strokeStyle = '#0f0';
 			ctx.lineWidth = 2;
 			for (let i = 0; i < 5; i++) {
-				ctx.moveTo(A[(i+1)%5].x, A[(i+1)%5].y);
-				ctx.lineTo(B[(i+1)%5].x, B[(i+1)%5].y);
+				ctx.moveTo(A[(i + 1) % 5].x, A[(i + 1) % 5].y);
+				ctx.lineTo(B[(i + 1) % 5].x, B[(i + 1) % 5].y);
 				ctx.lineTo(C[i].x, C[i].y);
 			}
 			ctx.closePath();
@@ -185,15 +182,41 @@ function Curve() {
 	}
 }
 
+/*
+ * The following is an automated player for nodejs.
+ *
+ * Convert the frames to mp4 with:
+ *	ffmpeg -r 25 -i animated-%03d.png  -c:v libx264 -preset slow -crf 22 -profile:v baseline -level 3.0 -movflags +faststart -pix_fmt yuv420p -an animated-400x400.mp4
+ * Then merge both side by side and convert to webp
+ *
+ */
 if (typeof window === 'undefined') {
+	/*
+	 * Request leading zero's
+	 */
+	Number.prototype.pad = function (size) {
+		let s = String(this);
+		while (s.length < (size || 2))
+			s = "0" + s;
+		return s;
+	}
+
 	let {createCanvas} = require('canvas')
 	let fs = require('fs')
 
-	let width = 500;
-	let height = 500;
+	let width = 400;
+	let height = 400;
 
 	// create the curve
 	let curve = new Curve();
+
+	// resize
+	for (let i = 0; i < curve.A.length; i++) {
+		curve.A[i].x *= width / 500;
+		curve.A[i].y *= width / 500;
+	}
+
+	// prepare
 	curve.calc();
 
 	// create the canvas
@@ -214,6 +237,6 @@ if (typeof window === 'undefined') {
 
 		// save
 		let buffer = canvas.toBuffer('image/png')
-		fs.writeFileSync('animated-' + Math.trunc(t / 10) + (t % 10) + '.png', buffer)
+		fs.writeFileSync('animated-' + t.pad(3) + '.png', buffer)
 	}
 }

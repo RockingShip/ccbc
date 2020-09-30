@@ -16,16 +16,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- * Request leading zero's
- */
-Number.prototype.pad = function (size) {
-	let s = String(this);
-	while (s.length < (size || 2))
-		s = "0" + s;
-	return s;
-}
-
 function Curve() {
 	/*
 	 * @date 2020-09-30 02:31:27
@@ -587,13 +577,10 @@ function Curve() {
 				const iPrev = (iCurr - 1 + sN) % sN; // previous contour segment
 				const iPrevPrev = (iPrev - 1 + sN) % sN; // previous contour segment before previous
 				const iNext = (iCurr + 1) % sN; // next contour segment
-				const iNextNext = (iNext + 1) % sN; // next contour segment after next
 
-				const jFirstPrev = segI[iPrev]; // first fragment of previous segment
 				const jFirstCurr = segI[iCurr]; // first fragment of current segment
 				const jSecondCurr = (jFirstCurr + 1) % fN; // second fragment of current segment
 				const jFirstNext = segI[iNext]; // first fragment of next segment
-				const jLastPrev = (jFirstCurr - 1 + fN) % fN; // last fragment of previous segment
 				const jLastCurr = (jFirstNext - 1 + fN) % fN; // last fragment of current segment
 
 				// Relationship between segments (left) and fragments (right)
@@ -651,14 +638,10 @@ function Curve() {
 								// iPrev would become too large for iPrevPrev, request iPrev to relocate to become smaller
 								if (segDir[iPrev] <= 0)
 									segDir[iPrev] = -2;
-								else if (segDir[iPrevPrev] <= 0)
-									segDir[iPrevPrev] = -2;
 							} else if (newCurrLen * maxRatio < segLen[iNext]) {
 								// iCurr would become too small for iNext, request iNext to relocate to become smaller
 								if (segDir[iNext] <= 0)
 									segDir[iNext] = -2;
-								else if (segDir[iNextNext] <= 0)
-									segDir[iNextNext] = -2;
 							} else if (newPrevLen <= newCurrLen * maxRatio) {
 								// export/relocate fragment
 								segLen[iCurr] -= fragLen[jFirstCurr]; // segment shrinks (sDir[] < 0)
@@ -678,14 +661,10 @@ function Curve() {
 				const iPrev = (iCurr - 1 + sN) % sN; // previous contour segment
 				const iPrevPrev = (iPrev - 1 + sN) % sN; // previous contour segment before previous
 				const iNext = (iCurr + 1) % sN; // next contour segment
-				const iNextNext = (iNext + 1) % sN; // next contour segment after next
 
 				const jFirstPrev = segI[iPrev]; // first fragment of previous segment
 				const jFirstCurr = segI[iCurr]; // first fragment of current segment
-				const jSecondCurr = (jFirstCurr + 1) % fN; // second fragment of current segment
-				const jFirstNext = segI[iNext]; // first fragment of next segment
 				const jLastPrev = (jFirstCurr - 1 + fN) % fN; // last fragment of previous segment
-				const jLastCurr = (jFirstNext - 1 + fN) % fN; // last fragment of current segment
 
 				// only examine previous segment if it has fragments to export
 				if (jFirstPrev !== jLastPrev) {
@@ -712,14 +691,10 @@ function Curve() {
 								// iPrev would become too small for iPrevPrev, request iPrev to relocate to become larger
 								if (segDir[iPrev] >= 0)
 									segDir[iPrev] = +2;
-								else if (segDir[iPrevPrev] >= 0)
-									segDir[iPrevPrev] = +2;
 							} else if (newCurrLen > segLen[iNext] * maxRatio) {
 								// iCurr would become too large for iNext, request iNext to relocate to become larger
 								if (segDir[iNext] >= 0)
 									segDir[iNext] = +2;
-								else if (segDir[iNextNext] >= 0)
-									segDir[iNextNext] = +2;
 							} else if (newPrevLen * maxRatio >= newCurrLen) {
 								// export/relocate fragment
 								segLen[iPrev] -= fragLen[jLastPrev]; // segment grows (sDir[] > 0)
@@ -1062,17 +1037,32 @@ function setup(curve, width, height) {
 
 /*
  * The following is a `replayLog` player for nodejs.
+ *
  * Convert the frames to mp4 with:
- *	ffmpeg -r 25 -i resize-%03d.png  -c:v libx264 -preset slow -crf 22 -profile:v baseline -level 3.0 -movflags +faststart -pix_fmt yuv420p -an resize.mp4
- *	/bin/rm resize-[0-9][0-9][0-9].png
- * 	ffmpeg -i resize.mp4  resize.webp
+ *	ffmpeg -r 25 -i resize-%03d.png  -c:v libx264 -preset slow -crf 22 -profile:v baseline -level 3.0 -movflags +faststart -pix_fmt yuv420p -an resize[VP]-400x400.mp4
+ * Then merge both side by side and convert to webp
+ *	ffmpeg -i resizeV-400x400.mp4 -i resizeP-400x400.mp4 -filter_complex hstack resize-400x400.webp
  */
 if (typeof window === "undefined") {
+	/*
+	 * Request leading zero's
+	 */
+	Number.prototype.pad = function (size) {
+		let s = String(this);
+		while (s.length < (size || 2))
+			s = "0" + s;
+		return s;
+	}
+
 	let nodeCanvas = require("canvas");
 	let fs = require("fs")
 
-	let width = 500;
-	let height = 500;
+	// read json file
+	// NOTE: leading "./" and trailing ".json" is required
+	let replayLog = require("./resize[VP]-400x400.json");
+
+	let width = replayLog.width;
+	let height = replayLog.height;
 
 	// create the canvas
 	let canvas = nodeCanvas.createCanvas(width, height)
@@ -1081,10 +1071,6 @@ if (typeof window === "undefined") {
 	let ctx = canvas.getContext("2d")
 
 	let curve = new Curve();
-
-	// read json file
-	// NOTE: leading "./" and trailing ".json" is required
-	let replayLog = require("./resize.json");
 
 	// replay
 	let frameNr = 0;
@@ -1133,7 +1119,7 @@ if (typeof window === "undefined") {
 		const frames = trail.frames;
 		let iTick = 0;
 		for (let iStep = 0; iStep < frames.length; iStep++) {
-			console.log(JSON.stringify({iTrail: iTrail, iTick: iTick, iFrame: frameNr}))
+			console.log(JSON.stringify({iTrail: iTrail, iTick: iTick, iFrame: frameNr}));
 			let ret;
 			while (iTick < frames[iStep]) {
 				ret = curve.tick();
@@ -1153,9 +1139,9 @@ if (typeof window === "undefined") {
 			ctx.font = "1em fixed";
 			ctx.fillText("numControls=" + curve.AX.length, 10, height - 10);
 
-			let buffer = canvas.toBuffer("image/png")
-			fs.writeFileSync("resize-" + frameNr.pad(3) + ".png", buffer)
-			fs.writeFileSync("resize.png", buffer)
+			let buffer = canvas.toBuffer("image/png");
+			fs.writeFileSync("resize-" + frameNr.pad(3) + ".png", buffer);
+			fs.writeFileSync("resize.png", buffer);
 			frameNr++;
 		}
 	}

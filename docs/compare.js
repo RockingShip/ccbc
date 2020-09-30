@@ -16,16 +16,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- * Request leading zero's
- */
-Number.prototype.pad = function (size) {
-	let s = String(this);
-	while (s.length < (size || 2))
-		s = "0" + s;
-	return s;
-}
-
 function Curve() {
 
 	this.AX = [];		// on-curve control points
@@ -101,7 +91,7 @@ function Curve() {
 			ctx.arc(AX[i], AY[i], radius, 0, 2 * Math.PI);
 			ctx.moveTo(AX[i], AY[i]);
 		}
-		ctx.stroke();
+		ctx.fill();
 	}
 
 	/*
@@ -597,65 +587,6 @@ function Curve() {
 
 			}
 		}
-
-		// validate balancer
-		if (0) // known issue:
-		for (let iCurr = 0; iCurr < sN - 1; iCurr++) {
-			const iNext = (iCurr + 1) % sN; // next contour segment
-			const iPrev = (iCurr - 1 + sN) % sN; // previous contour segment
-
-			if (1) {
-				// extra diagnostics
-				const iPrevPrev = (iPrev - 1 + sN) % sN; // previous contour segment before previous
-				const iNextNext = (iNext + 1) % sN; // next contour segment after next
-				const jFirstCurr = segI[iCurr]; // first fragment of current segment
-				const jSecondCurr = (jFirstCurr + 1) % fN; // second fragment of current segment
-				const jFirstNext = segI[iNext]; // first fragment of next segment
-				const jLastCurr = (jFirstNext - 1 + fN) % fN; // last fragment of current segment
-
-				if (segLen[iPrev] >= segLen[iCurr] * maxRatio)
-					console.log(JSON.stringify({
-						id: "ERROR3A",
-						// iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						// lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						// jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
-						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
-					}));
-				if (segLen[iPrev] * maxRatio <= segLen[iCurr])
-					console.log(JSON.stringify({
-						id: "ERROR3B",
-						// iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						// lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						// jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
-						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
-					}));
-				if (segLen[iCurr] >= segLen[iNext] * maxRatio)
-					console.log(JSON.stringify({
-						id: "ERROR3C",
-						// iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						// lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						// jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
-						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
-					}));
-				if (segLen[iCurr] * maxRatio <= segLen[iNext])
-					console.log(JSON.stringify({
-						id: "ERROR3D",
-						// iPrevPrev:iPrevPrev, iPrev:iPrev, iCurr:iCurr, iNext:iNext, iNextNext:iNextNext,
-						// lPrevPrev:segLen[iPrevPrev], lPrev:segLen[iPrev], lCurr:segLen[iCurr], lNext:segLen[iNext], lNextNext:segLen[iNextNext],
-						// jFirstCurr:jFirstCurr, jSecondCurr:jSecondCurr, jLastCurr:jLastCurr, jFirstNext:jFirstNext,
-						lFirstCurr: fragLen[jFirstCurr], lSecondCurr: fragLen[jSecondCurr], lLastCurr: fragLen[jLastCurr], lFirstNext: fragLen[jFirstNext]
-					}));
-			} else {
-				if (segLen[iPrev] > segLen[iCurr] * maxRatio)
-					console.log("ERROR3A: " + iCurr + " " + (segLen[iPrev] / segLen[iCurr]));
-				if (segLen[iPrev] * maxRatio < segLen[iCurr])
-					console.log("ERROR3B: " + iCurr + " " + (segLen[iPrev] / segLen[iCurr]));
-				if (segLen[iCurr] > segLen[iNext] * maxRatio)
-					console.log("ERROR3C: " + iCurr + " " + (segLen[iCurr] / segLen[iNext]));
-				if (segLen[iCurr] * maxRatio < segLen[iNext])
-					console.log("ERROR3D: " + iCurr + " " + (segLen[iCurr] / segLen[iNext]));
-			}
-		}
 	}
 
 	/*
@@ -699,19 +630,6 @@ function Curve() {
 		 * Core part
 		 */
 
-
-		// balancer todo: this is only the detector. replace it with `compareBalancer()`
-		if (0) {
-			// known issue:
-			for (let i = 0; i < sN; i++) {
-				let iPlus1 = (i + 1) % sN;
-
-				if (segLen[i] > segLen[iPlus1] * maxRatio)
-					console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-				if (segLen[i] * maxRatio < segLen[iPlus1])
-					console.log("YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
-			}
-		}
 
 		let changed = false;
 		let totalError = 0;
@@ -798,12 +716,6 @@ function Curve() {
 								newCurrLen * maxRatio >= newNextLen &&
 								newNextLen <= segLen[iNextNext] * maxRatio) {
 
-								if (0) console.log(JSON.stringify({
-									id: "B", iPrevPrev: iPrevPrev, iPrev: iPrev, iNext: iNext, iNextNext: iNextNext,
-									jFirstCurr: jFirstCurr, jSecondCurr: jSecondCurr, jFirstNext: jFirstNext, jLastCurr: jLastCurr, newCurrLen: newCurrLen, newNextLen: newNextLen,
-									segLenPrev: segLen[iPrev], segLenNextNext: segLen[iNextNext], fragLenLastCurr: fragLen[jLastCurr]
-								}));
-
 								// export/relocate fragment
 								segLen[iCurr] -= fragLen[jLastCurr]; // remove fragment length from current
 								segLen[iNext] += fragLen[jLastCurr]; // add fragment length to next
@@ -831,24 +743,6 @@ function Curve() {
 
 			if (Math.abs((len - segLen[i])) > 1e-10)
 				console.log("ERROR1B: " + i + " " + (len - segLen[i]));
-		}
-
-		// validate balancer
-		if (0) {
-			// known issue:
-			for (let i = 0; i < sN - 1; i++) {
-				let iNext = (i + 1) % sN;
-				let iPrev = (i - 1 + sN) % sN;
-
-				if (segLen[iPrev] > segLen[i] * maxRatio)
-					console.log("ERROR2A: " + i + " " + (segLen[iPrev] / segLen[i]));
-				if (segLen[iPrev] * maxRatio < segLen[i])
-					console.log("ERROR2B: " + i + " " + (segLen[iPrev] / segLen[i]));
-				if (segLen[i] > segLen[iNext] * maxRatio)
-					console.log("ERROR2C: " + i + " " + (segLen[i] / segLen[iNext]));
-				if (segLen[i] * maxRatio < segLen[iNext])
-					console.log("ERROR2D: " + i + " " + (segLen[i] / segLen[iNext]));
-			}
 		}
 
 		return totalError;
@@ -968,12 +862,30 @@ function setup(userCurve, followCurve, width, height) {
 	followCurve.totalError = followCurve.compare();
 }
 
+/*
+ * The following is an automated player for nodejs.
+ *
+ * Convert the frames to mp4 with:
+ *	ffmpeg -r 25 -i compare-%03d.png  -c:v libx264 -preset slow -crf 22 -profile:v baseline -level 3.0 -movflags +faststart -pix_fmt yuv420p -an compare-400x400.mp4
+ * Then merge both side by side and convert to webp
+ *	ffmpeg -i compare-400x400.mp4 compare-400x400.webp
+ */
 if (typeof window === "undefined") {
+	/*
+	 * Request leading zero's
+	 */
+	Number.prototype.pad = function (size) {
+		let s = String(this);
+		while (s.length < (size || 2))
+			s = "0" + s;
+		return s;
+	}
+
 	let nodeCanvas = require("canvas");
 	let fs = require("fs")
 
-	let width = 500;
-	let height = 500;
+	let width = 400;
+	let height = 400;
 
 	// create the canvas
 	let canvas = nodeCanvas.createCanvas(width, height)
@@ -989,33 +901,31 @@ if (typeof window === "undefined") {
 	followCurve.width = width;
 	followCurve.height = height;
 
-	let frameNr = 0;
-
-	for (let round = 0; round < 6;) {
+	for (let tickNr = 0, frameNr = 0; frameNr < 60*6;) {
 		let ret = followCurve.tick();
+		tickNr++;
 
 		if (ret === 0) {
 			// nothing changed
 		} else if (ret === 1) {
 			// call again
 		} else {
+
 			// draw frame
 			ctx.fillStyle = "#eee"
 			ctx.fillRect(0, 0, width, height);
 			followCurve.draw(ctx);
 			userCurve.drawCurvePoints(ctx, 10, "#f00");
 
+			// modulo to generate only the last 60 frames
 			let buffer = canvas.toBuffer("image/png")
-			fs.writeFileSync("compare-" + frameNr.pad(3) + ".png", buffer)
-			fs.writeFileSync("compare.png", buffer)
+			fs.writeFileSync("compare-" + (frameNr % 60).pad(3) + ".png", buffer)
 
 			// move 2nd curve control for animated effect
-			let x = 470;
-			let y = Math.round(250 + 200 * Math.sin(frameNr * Math.PI * 2 / 60));
+			let x = Math.round(width * 0.94);
+			let y = Math.round(height * (0.5 - 0.4 * Math.sin(frameNr * Math.PI * 2 / 60)));
 
-			// reset frame# for every cycle
-			if (frameNr >= 60)
-				frameNr = -1;
+			console.log(JSON.stringify({iTick: tickNr, iFrame: frameNr, x: x, y: y}))
 
 			userCurve.AX[2] = x;
 			userCurve.AY[2] = y;
@@ -1033,7 +943,6 @@ if (typeof window === "undefined") {
 
 			// next frame
 			frameNr++;
-			round++;
 		}
 
 	}
