@@ -59,12 +59,12 @@ function Curve() {
 	this.segErr = [];	// Error contribution segment
 	this.numCompare = 0;	// # times `compare()` is called
 	this.totalError = 0;	// total length of all curve/contour mapping lines
-	this.grandError = 0;
 	this.changed = 0;	// some curve points changed
 	this.pt = 0;		// current control point being updated
+	this.radius = 1;	// current radius to test alternative control locations
 	// settings
-	this.rescale = 0.98;	// amount to nudge controls to escape local minimum
 	this.maxRatio = 1.2;	// adjacent segments may not exceed this distance difference
+	this.maxRadius = 3;	// maximum radius
 	this.ratioContour = 1.0 / 6.0; // density controlNetLength:numContour for `captureContour()` -- used to determine number of contours
 	this.ratioCompare = 8.0 / 1.0; // density numContour:numFragment for `compareInit()` -- used to determine # curve fragments per contour segment
 
@@ -213,22 +213,22 @@ function Curve() {
 			// Odd N
 			for (let j = 0; j < N; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j - 1 + N) % N]) * 41 - (A[(j + 2) % N] - A[(j - 2 + N) % N]) * 11 + (A[(j + 3) % N] - A[(j - 3 + N) % N]) * 3 - (A[(j + 4) % N] - A[(j - 4 + N) % N])) / 153;
-		} else if (N === 8) {
+		} else if (N == 8) {
 			for (let j = 0; j < 8; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 7) % N]) * 15 - (A[(j + 2) % N] - A[(j + 6) % N]) * 4 + (A[(j + 3) % N] - A[(j + 5) % N])) / 56;
-		} else if (N === 7) {
+		} else if (N == 7) {
 			for (let j = 0; j < 7; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 6) % N]) * 11 - (A[(j + 2) % N] - A[(j + 5) % N]) * 3 + (A[(j + 3) % N] - A[(j + 4) % N])) / 41;
-		} else if (N === 6) {
+		} else if (N == 6) {
 			for (let j = 0; j < 6; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 5) % N]) * 4 - (A[(j + 2) % N] - A[(j + 4) % N])) / 15;
-		} else if (N === 5) {
+		} else if (N == 5) {
 			for (let j = 0; j < 5; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 4) % N]) * 3 - (A[(j + 2) % N] - A[(j + 3) % N])) / 11;
-		} else if (N === 4) {
+		} else if (N == 4) {
 			for (let j = 0; j < 4; j++)
 				B[j] = A[j] + (A[(j + 1) % N] - A[(j + 3) % N]) / 4;
-		} else if (N === 3) {
+		} else if (N == 3) {
 			for (let j = 0; j < 3; j++)
 				B[j] = A[j] + (A[(j + 1) % N] - A[(j + 2) % N]) / 3;
 		} else {
@@ -458,6 +458,19 @@ function Curve() {
 
 		// populate the above arrays
 		this.updateControls();
+
+		// validate segment length
+		for (let i = 0; i < sN; i++) {
+			const iPlus1 = (i + 1) % sN;
+
+			let len = 0;
+			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
+				len += fragLen[k];
+
+			if (Math.abs((len - segLen[i])) > 1e-10)
+				console.log("ERROR1: " + i + " " + (len - segLen[i]));
+		}
+
 	}
 
 	/*
@@ -485,47 +498,21 @@ function Curve() {
 
 		this.numCompare++;
 
-		if (0) {
-			// validate segment length
-			for (let i = 0; i < sN; i++) {
-				const iPlus1 = (i + 1) % sN;
+		// validate segment length
+		for (let i = 0; i < sN; i++) {
+			const iPlus1 = (i + 1) % sN;
 
-				let len = 0;
-				for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
-					len += fragLen[k];
+			let len = 0;
+			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
+				len += fragLen[k];
 
-				if (Math.abs((len - segLen[i])) > 1e-10)
-					console.log("ERROR2: " + i + " " + (len - segLen[i]));
-			}
+			if (Math.abs((len - segLen[i])) > 1e-10)
+				console.log("ERROR2: " + i + " " + (len - segLen[i]));
 		}
 
 
 		/*
-		 * Core part:
-		 *
-		 * Connecting the curve with the contour.
-		 * Things may stretch but not so far that it rips.
-		 * `maxRatio` determines that maximum/minimum distance.
-		 * The curve is chopped into segments, the contour into fragments.
-		 * Segments are synced with fragments, there is a ration of 1:N (currently 1:8)
-		 * The higher N, the easier a fragments can be relocated to a neighbour segment.
-		 *
-		 * As long as the contour does not change, the direction of the fragment flow is constant.
-		 * You can visually see that with `resize`.
-		 *
-		 * sDir[] was first to hold the direction of that flow.
-		 * now it is the direction which should be avoided.
-		 *
-		 *
-		 * Places of stress are when there are too many or scarce.
-		 * below is a simple relocation handler:
-		 * compares the difference between relocation or not and choosing the better.
-		 *
-		 * The metrics used in comparing is:
-		 * total distance = sum all distances between each segment and its synced fragment.
-		 * distance being sqrt(x*x+y*y)
-		 * Code can easily be extended for a third (or more) dimension `Z`.
-		 *
+		 * Core part
 		 */
 
 
@@ -637,6 +624,18 @@ function Curve() {
 		} while (changed);
 
 
+		// validate segment length
+		for (let i = 0; i < sN; i++) {
+			const iPlus1 = (i + 1) % sN;
+
+			let len = 0;
+			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fN)
+				len += fragLen[k];
+
+			if (Math.abs((len - segLen[i])) > 1e-10)
+				console.log("ERROR3: " + i + " " + (len - segLen[i]));
+		}
+
 		return totalError;
 	}
 
@@ -720,7 +719,6 @@ function Curve() {
 			// NOTE: Need to call to update FCOEF
 			this.compareInit(this.contourX.length * this.ratioCompare, this.contourX, this.contourY);
 			this.totalError = this.compare();
-			this.grandError = this.totalError;
 		}
 	}
 
@@ -799,7 +797,6 @@ function Curve() {
 			// NOTE: Need to call to update FCOEF
 			this.compareInit(this.contourX.length * this.ratioCompare, this.contourX, this.contourY);
 			this.totalError = this.compare();
-			this.grandError = this.totalError;
 		}
 
 		/*
@@ -824,19 +821,13 @@ function Curve() {
 		const contourY = this.contourY;
 		const ms = Date.now();
 
-		/*
-		 * Core part:
-		 *
-		 * Move each on-curve control point slightly in all directions to find a better contour fit.
-		 */
-
 		// update current control point
 		for (let dx = -1; dx <= +1; dx++) {
 			for (let dy = -1; dy <= +1; dy++) {
 				if (dx || dy) {
 					// tweak curve
-					AX[this.pt] += dx;
-					AY[this.pt] += dy;
+					AX[this.pt] += dx * this.radius;
+					AY[this.pt] += dy * this.radius;
 					this.calcControlsClosed(AX, BX, CX);
 					this.calcControlsClosed(AY, BY, CY);
 					this.updateControls();
@@ -847,11 +838,12 @@ function Curve() {
 					if (err < this.totalError) {
 						// effectuate immediately, continue directional scan
 						this.totalError = err;
+						this.radius = 1;
 						this.changed++;
 					} else {
 						// undo change
-						AX[this.pt] -= dx;
-						AY[this.pt] -= dy;
+						this.AX[this.pt] -= dx * this.radius;
+						this.AY[this.pt] -= dy * this.radius;
 					}
 				}
 			}
@@ -860,6 +852,13 @@ function Curve() {
 
 		// console.log(JSON.stringify({ms: Date.now(), frame: this.frameNr, totalError: this.totalError, pt: this.pt, numCompare: this.numCompare}));
 
+
+		// if (this.radius <= this.maxRadius) {
+		// 	this.radius++;
+		// 	return 0; // call again. wait 0ms.
+		// }
+		// this.radius = 1;
+
 		// bump control point
 		this.pt++;
 		if (this.pt < bN)
@@ -867,59 +866,14 @@ function Curve() {
 		// wrap
 		this.pt = 0;
 
-		/*
-		 * If an improvement was found, keep moving and make another round.
-		 * NOTE: all state settings must have been reset, ready for the next round (being: `pt=0`)/
-		 */
-
 		if (this.changed) {
 			this.changed = 0;
 			return 2; // call again, frame complete
 		}
 
-		/*
-		 * Core part:
-		 *
-		 * Give all on-curve control points a slight nudge to escape a possible local minimum.
-		 * Do in such a way that is least disruptive:
-		 * Pull all control points slightly to the center
-		 */
-
-		if (this.totalError < this.grandError) {
-			this.grandError = this.totalError;
-
-			// find the center
-			let avgX = 0;
-			let avgY = 0;
-			for (let i=0; i<bN; i++) {
-				avgX += AX[i];
-				avgY += AY[i];
-			}
-			avgX /= bN;
-			avgY /= bN;
-
-			// nudge controls
-			for (let i=0; i<bN; i++) {
-				AX[i] = Math.trunc( (AX[i]-avgX) * this.rescale + avgX);
-				AY[i] = Math.trunc( (AY[i]-avgY) * this.rescale + avgY);
-			}
-
-			// effectuate
-			this.calcControlsClosed(AX, BX, CX);
-			this.calcControlsClosed(AY, BY, CY);
-			this.updateControls();
-			this.totalError = this.compare();
-
-			return 3;
-		}
-
-		/*
-		 * Higher level scenarios here
-		 * For example: deletion (or addition) of on-curve control points;
-		 */
-
 		return 0; // nothing changed
 	};
+
 }
 
 function setup(curve, width, height) {
@@ -945,8 +899,8 @@ function setup(curve, width, height) {
 
 	// initial compare contour/curve
 	curve.compareInit(curve.contourX.length * curve.ratioCompare, curve.contourX, curve.contourY);
+
 	curve.totalError = curve.compare();
-	curve.grandError = curve.totalError;
 
 }
 
@@ -978,7 +932,7 @@ if (typeof window === "undefined") {
 
 	// replay
 	let frameNr = 0;
-	for (let iTrail=0; iTrail<replayLog.trails.length; iTrail++) {
+	for (let iTrail = 0; iTrail < replayLog.trails.length; iTrail++) {
 		const trail = replayLog.trails[iTrail];
 
 		// create contour curve
@@ -1014,7 +968,7 @@ if (typeof window === "undefined") {
 		ctx.strokeStyle = "#000";
 		ctx.fillStyle = "#000";
 		ctx.font = "1em fixed";
-		ctx.fillText("numControls="+curve.AX.length, 25, height-25);
+		ctx.fillText("numControls=" + curve.AX.length, 10, height - 10);
 
 		let buffer = canvas.toBuffer("image/png")
 		fs.writeFileSync("resize-" + frameNr.pad(3) + ".png", buffer)
@@ -1024,18 +978,20 @@ if (typeof window === "undefined") {
 		/*
 		 * Apply the ticks
 		 */
-		const ticks = trail.ticks;
+		const frames = trail.frames;
 		let iTick = 0;
-		for (let iStep=0; iStep<ticks.length; iStep++) {
+		for (let iStep = 0; iStep < frames.length; iStep++) {
 			console.log(JSON.stringify({iTrail: iTrail, iTick: iTick, iFrame: frameNr}))
-			while (iTick < ticks[iStep]) {
-				curve.tick();
+			let ret;
+			while (iTick < frames[iStep]) {
+				ret = curve.tick();
 				iTick++;
 			}
 
 			// clear frame
 			ctx.fillStyle = "#eee"
 			ctx.fillRect(0, 0, width, height);
+
 			// draw frame
 			curve.drawCompare(ctx);
 			curve.drawContour(ctx, curve.contourX, curve.contourY, "#f00");
@@ -1046,7 +1002,7 @@ if (typeof window === "undefined") {
 			ctx.strokeStyle = "#000";
 			ctx.fillStyle = "#000";
 			ctx.font = "1em fixed";
-			ctx.fillText("numControls="+curve.AX.length, 25, height-25);
+			ctx.fillText("numControls=" + curve.AX.length, 10, height - 10);
 
 			let buffer = canvas.toBuffer("image/png")
 			fs.writeFileSync("resize-" + frameNr.pad(3) + ".png", buffer)

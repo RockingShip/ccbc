@@ -114,6 +114,8 @@ let AY = <span id="txtAY"></span>;
 		 */
 
 		// UI states
+		const canvas = document.id("animated");
+		const domSvg = document.id("svg");
 		const butMode = document.id("butMode");
 		const butReplay = document.id("butReplay");
 		const domSlider = document.id('slider');
@@ -124,18 +126,17 @@ let AY = <span id="txtAY"></span>;
 		const txtContourAX = document.id("txtContourAX")
 		const txtContourAY = document.id("txtContourAY")
 		const txtStatus = document.id("txtStatus")
+		const txtNumControls = document.id("numControls");
 
 		let visualPrecise = true; // default to visual
 		let stopPlay = true; // default to stop
 
 		// get size of SVG
-		const domSvg = document.id("svg");
 		const svgrect = domSvg.getBoundingClientRect();
 		let width = svgrect.width;
 		let height = svgrect.height;
 
 		// create canvas
-		const canvas = document.id("animated");
 		canvas.width = width;
 		canvas.height = height;
 
@@ -188,12 +189,12 @@ let AY = <span id="txtAY"></span>;
 				// functionality temporarily moved to draw event handler
 			},
 		});
-		document.id("numControls").set("text", "numControls=" + slider.step);
+		txtNumControls.set("text", "numControls=" + slider.step);
 
 		/*
 		 * activate mode button
 		 */
-		butMode.updateLabel = function() {
+		butMode.updateLabel = function () {
 			if (visualPrecise) {
 				butMode.set("html", "<b>VISUAL</b>/<strike>precise</strike>");
 			} else {
@@ -206,15 +207,22 @@ let AY = <span id="txtAY"></span>;
 		});
 
 		// frame numbers to bump slider step when recording automatically
+		// NOTE: turns out this is CPU and canvas size dependent (AMD FX-8320E)
 		let automated = [];
 		if (0) {
-			visualPrecise = true; // visual mode
-			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*16, 14*17-2, 14*18, 14*19+2, 14*20, 14*21+2, 14*22, 14*23, 14*24, 14*25, 600];
+			// for 400x400
+			visualPrecise = false; // visual mode
+			automated = [8 * 1, 8 * 2, 8 * 3, 8 * 4, 8 * 5, 8 * 6, 8 * 7, 8 * 8, 8 * 9, 8 * 10, 8 * 11, 8 * 12, 8 * 13, 8 * 14, 8 * 15, 8 * 16, 8 * 17, 8 * 18, 8 * 19, 8 * 20, 600];
 			slider.isDragging = true;
 		} else if (0) {
+			// for 500x500 visual
+			visualPrecise = true; // visual mode
+			automated = [14 * 1, 14 * 2, 14 * 3, 14 * 4, 14 * 5, 14 * 6, 14 * 7, 14 * 8, 14 * 9, 14 * 10, 14 * 16, 14 * 17, 14 * 18, 14 * 19, 14 * 20, 14 * 21, 14 * 22, 14 * 23, 14 * 24, 14 * 25, 600];
+			slider.isDragging = true;
+		} else if (0) {
+			// for 500x500 precise
 			visualPrecise = false; // precise mode
-			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13, 14*14, 14*15, 14*16, 14*17, 14*18, 14*19, 14*20, 450];
-			automated = [14*1, 14*2, 14*3, 14*4, 14*5, 14*6, 14*7, 14*8, 14*9, 14*10, 14*11, 14*12, 14*13, 14*14, 14*15, 14*16, 14*17, 14*18, 14*19, 14*20, 450];
+			automated = [14 * 1, 14 * 2, 14 * 3, 14 * 4, 14 * 5, 14 * 6, 14 * 7, 14 * 8, 14 * 9, 14 * 10, 14 * 11, 14 * 12, 14 * 13, 14 * 14, 14 * 15, 14 * 16, 14 * 17, 14 * 18, 14 * 19, 14 * 20, 450];
 			slider.isDragging = true;
 		}
 
@@ -226,10 +234,11 @@ let AY = <span id="txtAY"></span>;
 		let replayFrame = undefined; // current replay frame
 		let replayTick = undefined; // Current tick for frame
 		let replayLog = {
-			width : width,
+			width: width,
 			height: height,
+			visualPrecise: visualPrecise,
 			trails: [],
-			beginTrail: function() {
+			beginTrail: function () {
 				// capture current settings as new trail
 				// NOTE: if current trail is empty, just update settings
 				if (this.trails.length === 0 || this.trails[this.trails.length - 1].frames.length > 0) {
@@ -249,7 +258,7 @@ let AY = <span id="txtAY"></span>;
 				tickNr = 0;
 
 			},
-			addTick: function() {
+			addTick: function () {
 				if (this.trails.length) {
 					// append sync point if it changed
 					const frames = this.trails[this.trails.length - 1].frames;
@@ -263,7 +272,7 @@ let AY = <span id="txtAY"></span>;
 						frames.push(tickNr);
 				}
 			},
-			loadTrail: function(trail) {
+			loadTrail: function (trail) {
 				// create contour curve
 				followCurve.AX = trail.contourAX.slice();
 				followCurve.AY = trail.contourAY.slice();
@@ -404,10 +413,10 @@ let AY = <span id="txtAY"></span>;
 					// change number of controls
 					if (slider.step > followCurve.AX.length) {
 						followCurve.increaseControls(slider.step, visualPrecise);
-						document.id("numControls").set("text", "numControls=" + slider.step);
+						txtNumControls.set("text", "numControls=" + slider.step);
 					} else if (slider.step < followCurve.AX.length) {
 						followCurve.decreaseControls(slider.step, visualPrecise);
-						document.id("numControls").set("text", "numControls=" + slider.step);
+						txtNumControls.set("text", "numControls=" + slider.step);
 					}
 
 					if (replayTrail === undefined)
@@ -455,7 +464,7 @@ let AY = <span id="txtAY"></span>;
 
 			// next frame
 			if (automated.length)
-				document.id("txt2").set("text", "frame="+frameNr);
+				document.id("txt2").set("text", "frame=" + frameNr);
 
 			frameNr++;
 		}, 1000 / 25);
@@ -463,7 +472,7 @@ let AY = <span id="txtAY"></span>;
 		/*
 		 * Replay button
 		 */
-		butReplay.updateLabel = function() {
+		butReplay.updateLabel = function () {
 			if (stopPlay) {
 				butReplay.set("html", "<b>STOP</b>/<strike>play</strike>");
 			} else {
