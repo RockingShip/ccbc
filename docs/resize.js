@@ -27,6 +27,10 @@ Number.prototype.pad = function (size) {
 }
 
 function Curve() {
+	/*
+	 * @date 2020-09-30 02:31:27
+	 * NOTE: AX and friends somehow share references, do not assign directly but overwrite their contents.
+	 */
 
 	this.AX = [];		// on-curve control points
 	this.AY = [];
@@ -58,13 +62,16 @@ function Curve() {
 	this.segLen = [];	// length of segment
 	this.segErr = [];	// Error contribution segment
 	this.numCompare = 0;	// # times `compare()` is called
-	this.totalError = 0;	// total length of all curve/contour mapping lines
+	this.numRelocate = 0;	// # times `compare()` relocated a fragment
+	this.bestError = 0;	// total length of all curve/contour mapping lines
+	this.grandError = 0;
+	this.grandAX = [];
+	this.grandAY = [];
 	this.changed = 0;	// some curve points changed
 	this.pt = 0;		// current control point being updated
-	this.radius = 1;	// current radius to test alternative control locations
 	// settings
+	this.rescale = 1.1;	// amount to nudge controls to escape local minimum
 	this.maxRatio = 1.2;	// adjacent segments may not exceed this distance difference
-	this.maxRadius = 3;	// maximum radius
 	this.ratioContour = 1.0 / 6.0; // density controlNetLength:numContour for `captureContour()` -- used to determine number of contours
 	this.ratioCompare = 8.0 / 1.0; // density numContour:numFragment for `compareInit()` -- used to determine # curve fragments per contour segment
 
@@ -162,6 +169,35 @@ function Curve() {
 	};
 
 	/*
+	 * Draw contour coordinate vector
+	 */
+	this.drawContourCongestion = function (ctx, contourX, contourY) {
+		ctx.beginPath();
+		ctx.strokeStyle = "#888";
+		ctx.fillStyle =  "#888";
+		for (let i = 0; i < contourX.length; i++)
+			if (this.segDir[i] !== -2 && this.segDir[i] !== +2)
+				ctx.fillRect(contourX[i] - 1, contourY[i] - 1, 2, 2);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.strokeStyle = "#ff0";
+		ctx.fillStyle =  "#ff0";
+		for (let i = 0; i < contourX.length; i++)
+			if (this.segDir[i] === -2)
+				ctx.fillRect(contourX[i] - 1, contourY[i] - 1, 3, 3);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.strokeStyle = "#f0f";
+		ctx.fillStyle =  "#f0f";
+		for (let i = 0; i < contourX.length; i++)
+			if (this.segDir[i] === +2)
+				ctx.fillRect(contourX[i] - 1, contourY[i] - 1, 3, 3);
+		ctx.stroke();
+	};
+
+	/*
 	 * Draw contour/curve mapping
 	 */
 	this.drawCompare = function (ctx) {
@@ -187,12 +223,21 @@ function Curve() {
 	 * Draw complete frame
 	 */
 	this.draw = function (ctx) {
-		// draw initial state
-		this.drawCompare(ctx);
-		this.drawContour(ctx, this.contourX, this.contourY, "#f00");
-		this.drawCurvePoints(ctx, 2, "#00f");
-		this.drawCurve(ctx, "#00f");
-		// curve.drawHints(ctx, "#0f0");
+		if (false) {
+			// special version to illustrate where congestion is located.
+			// contour is colour coded top level
+			// draw initial state
+			this.drawCompare(ctx);
+			this.drawCurvePoints(ctx, 2, "#00f");
+			this.drawCurve(ctx, "#00f");
+			this.drawContourCongestion(ctx, this.contourX, this.contourY);
+		} else {
+			// draw initial state
+			this.drawCompare(ctx);
+			this.drawContour(ctx, this.contourX, this.contourY, "#f00");
+			this.drawCurvePoints(ctx, 2, "#00f");
+			this.drawCurve(ctx, "#00f");
+		}
 	}
 
 	/*
@@ -200,7 +245,6 @@ function Curve() {
 	 */
 	this.calcControlsClosed = function (A, B, C) {
 		const N = A.length;
-		const round = Math.round;
 
 		B.length = N;
 		C.length = N;
@@ -213,22 +257,22 @@ function Curve() {
 			// Odd N
 			for (let j = 0; j < N; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j - 1 + N) % N]) * 41 - (A[(j + 2) % N] - A[(j - 2 + N) % N]) * 11 + (A[(j + 3) % N] - A[(j - 3 + N) % N]) * 3 - (A[(j + 4) % N] - A[(j - 4 + N) % N])) / 153;
-		} else if (N == 8) {
+		} else if (N === 8) {
 			for (let j = 0; j < 8; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 7) % N]) * 15 - (A[(j + 2) % N] - A[(j + 6) % N]) * 4 + (A[(j + 3) % N] - A[(j + 5) % N])) / 56;
-		} else if (N == 7) {
+		} else if (N === 7) {
 			for (let j = 0; j < 7; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 6) % N]) * 11 - (A[(j + 2) % N] - A[(j + 5) % N]) * 3 + (A[(j + 3) % N] - A[(j + 4) % N])) / 41;
-		} else if (N == 6) {
+		} else if (N === 6) {
 			for (let j = 0; j < 6; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 5) % N]) * 4 - (A[(j + 2) % N] - A[(j + 4) % N])) / 15;
-		} else if (N == 5) {
+		} else if (N === 5) {
 			for (let j = 0; j < 5; j++)
 				B[j] = A[j] + ((A[(j + 1) % N] - A[(j + 4) % N]) * 3 - (A[(j + 2) % N] - A[(j + 3) % N])) / 11;
-		} else if (N == 4) {
+		} else if (N === 4) {
 			for (let j = 0; j < 4; j++)
 				B[j] = A[j] + (A[(j + 1) % N] - A[(j + 3) % N]) / 4;
-		} else if (N == 3) {
+		} else if (N === 3) {
 			for (let j = 0; j < 3; j++)
 				B[j] = A[j] + (A[(j + 1) % N] - A[(j + 2) % N]) / 3;
 		} else {
@@ -362,11 +406,15 @@ function Curve() {
 			this.RCOEF0Y[i] = AY[i] * (-3 * -dt + 3 * -dt * -dt + dt * -dt * -dt) + BY[i] * (3 * -dt - 6 * -dt * -dt + 3 * -dt * -dt * -dt) + CY[i] * (3 * -dt * -dt - 3 * -dt * -dt * -dt) + AY[iPlus1] * (-dt * -dt * -dt);
 		}
 
+		const contourX = this.contourX;
+		const contourY = this.contourY;
 		const fragLen = this.fragLen;
 		const fragX = this.fragX;
 		const fragY = this.fragY;
 		const segI = this.segI;
+		const segDir = this.segDir;
 		const segLen = this.segLen;
+		const segErr = this.segErr;
 		const sN = segLen.length;
 		const fN = fragLen.length;
 
@@ -388,13 +436,20 @@ function Curve() {
 			}
 		}
 
-		// update segment lengths
-		for (let i = 0; i < sN; i++) {
-			const iPlus1 = (i + 1) % sN;
+		// update segments
+		for (let iSeg = 0; iSeg < sN; iSeg++) {
+			const iPlus1 = (iSeg + 1) % sN;
+			const iFrag = segI[iSeg];
 
-			segLen[i] = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fN)
-				segLen[i] += fragLen[k];
+			let len = 0;
+			for (let k = iFrag; k !== segI[iPlus1]; k = (k + 1) % fN)
+				len += fragLen[k];
+			segLen[iSeg] = len;
+
+			// calculate error
+			let dx = (contourX[iSeg] - fragX[iFrag]);
+			let dy = (contourY[iSeg] - fragY[iFrag]);
+			segErr[iSeg] = (dx * dx) + (dy * dy);
 		}
 	}
 
@@ -406,11 +461,8 @@ function Curve() {
 		const AY = this.AY;
 		const bN = AX.length; // number of bezier sections
 		const sN = contourX.length; // number of contour segments
-		const fragLen = this.fragLen;
 		const segI = this.segI;
-		const segLen = this.segLen;
 		const segDir = this.segDir;
-		const segErr = this.segErr;
 
 		// determine `dt`
 		this.dt = 1 / numFragments; // `dt` for complete composite curve
@@ -453,24 +505,14 @@ function Curve() {
 		for (let i = 0; i < sN; i++) {
 			segI[i] = Math.trunc(i * numFragments / sN);
 			segDir[i] = 0;
-			segErr[i] = 0;
 		}
 
 		// populate the above arrays
 		this.updateControls();
 
-		// validate segment length
-		for (let i = 0; i < sN; i++) {
-			const iPlus1 = (i + 1) % sN;
-
-			let len = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
-				len += fragLen[k];
-
-			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR1: " + i + " " + (len - segLen[i]));
-		}
-
+		this.bestError = this.compare();
+		this.grandError = this.bestError;
+		this.pt = 0;
 	}
 
 	/*
@@ -492,27 +534,45 @@ function Curve() {
 		const segDir = this.segDir;
 		const segI = this.segI;
 		const segLen = this.segLen;
+		const segErr = this.segErr;
 		const maxRatio = this.maxRatio;
 		const sN = segLen.length;
 		const fN = fragLen.length;
 
 		this.numCompare++;
 
-		// validate segment length
-		for (let i = 0; i < sN; i++) {
-			const iPlus1 = (i + 1) % sN;
+		if (0) {
+			// validate segment length
+			for (let i = 0; i < sN; i++) {
+				const iPlus1 = (i + 1) % sN;
 
-			let len = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
-				len += fragLen[k];
+				let len = 0;
+				for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fragLen.length)
+					len += fragLen[k];
 
-			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR2: " + i + " " + (len - segLen[i]));
+				if (Math.abs((len - segLen[i])) > 1e-10)
+					console.log("ERROR2: " + i + " " + (len - segLen[i]));
+			}
 		}
 
 
 		/*
-		 * Core part
+		 * Core part:
+		 *
+		 * Connecting the curve with the contour.
+		 * Things may stretch but not so far that it rips.
+		 * `maxRatio` determines that maximum/minimum distance.
+		 * The curve is chopped into segments, the contour into fragments.
+		 * Segments are synced with fragments, there is a ration of 1:N (currently 1:8)
+		 * The higher N, the easier a fragments can be relocated to a neighbour segment.
+		 *
+		 * As long as the contour does not change, the direction of the fragment flow is constant.
+		 *
+		 * The metrics used in comparing is:
+		 * total distance = sum all distances between each segment and its synced fragment.
+		 * distance being sqrt(x*x+y*y)
+		 * Code can easily be extended for a third (or more) dimension `Z`.
+		 *
 		 */
 
 
@@ -529,29 +589,52 @@ function Curve() {
 				const iNext = (iCurr + 1) % sN; // next contour segment
 				const iNextNext = (iNext + 1) % sN; // next contour segment after next
 
+				const jFirstPrev = segI[iPrev]; // first fragment of previous segment
 				const jFirstCurr = segI[iCurr]; // first fragment of current segment
 				const jSecondCurr = (jFirstCurr + 1) % fN; // second fragment of current segment
 				const jFirstNext = segI[iNext]; // first fragment of next segment
+				const jLastPrev = (jFirstCurr - 1 + fN) % fN; // last fragment of previous segment
 				const jLastCurr = (jFirstNext - 1 + fN) % fN; // last fragment of current segment
 
-				// calculate error for LEADING(iCurr) seam
-				let dx = (contourX[iCurr] - fragX[jFirstCurr]);
-				let dy = (contourY[iCurr] - fragY[jFirstCurr]);
-				const errFirstCurr = (dx * dx) + (dy * dy);
+				// Relationship between segments (left) and fragments (right)
+				// There are always more segments than fragments
+				//
+				//  iPrevPrev ->   ...
+				//                 ...
+				//  iPrev     ->   jFirstPrev
+				//                 ...
+				//                 jLastPrev
+				//  iCurr     ->   jFirstCurr
+				//                 jSecondCurr
+				//                 ...
+				//                 jLastCurr
+				//  iNext     ->   jFirstNext
+				//                 ...
+				//
+				// sDir[] indicated the flow direction.
+				// 	Positive values mean the segment will grow by relocating a fragment from a previous segment to the current
+				//	Negative values mean the segment sill shrink by relocating a fragment from the current segment to the next
+				//	+/- 1 indicates an advisory flow
+				//	+/- 2 indicated a mandatory relocation (as long as balancing constraints apply)
 
-				// update return value
-				totalError += errFirstCurr;
+				/*
+				 * @date 2020-09-30 00:40:15
+				 * Previously, jumping directly to 100 controls would require some 145k `numCompare` and 10.2k `numRelocate`
+				 * Now it requires some 132k `numCompare` and 9.4k `numRelocate`
+				 * Te anticipated `de-stresser` reduces `numRelocate` to some 6k
+				 */
 
-				// only examine current segment that have fragments to export
+				// only examine current segment if it has fragments to export
 				if (jFirstCurr !== jLastCurr) {
 
-					if (segDir[iCurr] !== -1) {
+					// Handle shrinking by exporting a fragment to the previous segment
+					if (segDir[iCurr] <= 0) {
 						dx = (contourX[iCurr] - fragX[jSecondCurr]);
 						dy = (contourY[iCurr] - fragY[jSecondCurr]);
 						const errSecondCurr = (dx * dx) + (dy * dy);
 
 						// test if improvement. The current segment would benefit with an export
-						if (errFirstCurr < errSecondCurr) {
+						if (segErr[iCurr] < errSecondCurr || segDir[iCurr] === -2) {
 							// improvement, export/relocate first fragment to previous segment
 
 							// only export if balancing constraints are met
@@ -561,80 +644,100 @@ function Curve() {
 							const newPrevLen = segLen[iPrev] + fragLen[jFirstCurr];
 							const newCurrLen = segLen[iCurr] - fragLen[jFirstCurr];
 
-							if (segLen[iPrevPrev] * maxRatio >= newPrevLen &&
-								newPrevLen <= newCurrLen * maxRatio &&
-								newCurrLen * maxRatio >= segLen[iNext]) {
+							// NOTE: there are actually 6 compares to test validity.
+							//       half are not Needed because iPrev grows and iCurr shrinks
 
+							if (segLen[iPrevPrev] * maxRatio < newPrevLen) {
+								// iPrev would become too large for iPrevPrev, request iPrev to relocate to become smaller
+								if (segDir[iPrev] <= 0)
+									segDir[iPrev] = -2;
+								else if (segDir[iPrevPrev] <= 0)
+									segDir[iPrevPrev] = -2;
+							} else if (newCurrLen * maxRatio < segLen[iNext]) {
+								// iCurr would become too small for iNext, request iNext to relocate to become smaller
+								if (segDir[iNext] <= 0)
+									segDir[iNext] = -2;
+								else if (segDir[iNextNext] <= 0)
+									segDir[iNextNext] = -2;
+							} else if (newPrevLen <= newCurrLen * maxRatio) {
 								// export/relocate fragment
-								segLen[iCurr] -= fragLen[jFirstCurr];
+								segLen[iCurr] -= fragLen[jFirstCurr]; // segment shrinks (sDir[] < 0)
 								segLen[iPrev] += fragLen[jFirstCurr];
 								segI[iCurr] = jSecondCurr;
-								segDir[iCurr] = +1;
-								// console.log('CHA:' + iCurr);
-								// console.log(JSON.stringify({errFirstCurr:errFirstCurr, errSecondCurr:errSecondCurr}))
+								segDir[iCurr] = -1;
+								segErr[iCurr] = errSecondCurr;
 								changed = true;
-							}
-						}
-					}
-
-					if (segDir[iNext] !== +1) {
-						// calculate error for TRAILING(iNext) seam
-						let dx = (contourX[iNext] - fragX[jLastCurr]);
-						let dy = (contourY[iNext] - fragY[jLastCurr]);
-						const errLastCurr = (dx * dx) + (dy * dy);
-						dx = (contourX[iNext] - fragX[jFirstNext]);
-						dy = (contourY[iNext] - fragY[jFirstNext]);
-						const errFirstNext = (dx * dx) + (dy * dy);
-
-						// test if improvement. The next segment would benefit with an export
-						if (errLastCurr < errFirstNext) {
-							// improvement, export/relocate last fragment to next segment
-
-							// only export if balancing constraints are met
-							// <prev> <curr-frag> <next+frag> <nextnext>
-
-							// previous must comply to its neighbour before
-							const newCurrLen = segLen[iCurr] - fragLen[jLastCurr];
-							const newNextLen = segLen[iNext] + fragLen[jLastCurr];
-
-							if (segLen[iPrev] <= newCurrLen * maxRatio &&
-								newCurrLen * maxRatio >= newNextLen &&
-								newNextLen <= segLen[iNextNext] * maxRatio) {
-
-								if (0) console.log(JSON.stringify({
-									id: "B", iPrevPrev: iPrevPrev, iPrev: iPrev, iNext: iNext, iNextNext: iNextNext,
-									jFirstCurr: jFirstCurr, jSecondCurr: jSecondCurr, jFirstNext: jFirstNext, jLastCurr: jLastCurr, newCurrLen: newCurrLen, newNextLen: newNextLen,
-									segLenPrev: segLen[iPrev], segLenNextNext: segLen[iNextNext], fragLenLastCurr: fragLen[jLastCurr]
-								}));
-
-								// export/relocate fragment
-								segLen[iCurr] -= fragLen[jLastCurr]; // remove fragment length from current
-								segLen[iNext] += fragLen[jLastCurr]; // add fragment length to next
-								segI[iNext] = jLastCurr;
-								segDir[iNext] = -1;
-								// console.log('CHB:' + iCurr);
-								// console.log(JSON.stringify({errLastCurr:errLastCurr, errFirstNext:errFirstNext}))
-								changed = true;
+								this.numRelocate++;
 							}
 						}
 					}
 				}
 			}
-			// console.log('changed:' + totalError + ' ' + x++)
+
+			for (let iCurr = sN-1; iCurr >= 0; iCurr--) {
+				const iPrev = (iCurr - 1 + sN) % sN; // previous contour segment
+				const iPrevPrev = (iPrev - 1 + sN) % sN; // previous contour segment before previous
+				const iNext = (iCurr + 1) % sN; // next contour segment
+				const iNextNext = (iNext + 1) % sN; // next contour segment after next
+
+				const jFirstPrev = segI[iPrev]; // first fragment of previous segment
+				const jFirstCurr = segI[iCurr]; // first fragment of current segment
+				const jSecondCurr = (jFirstCurr + 1) % fN; // second fragment of current segment
+				const jFirstNext = segI[iNext]; // first fragment of next segment
+				const jLastPrev = (jFirstCurr - 1 + fN) % fN; // last fragment of previous segment
+				const jLastCurr = (jFirstNext - 1 + fN) % fN; // last fragment of current segment
+
+				// only examine previous segment if it has fragments to export
+				if (jFirstPrev !== jLastPrev) {
+
+					// Handle growing by importing a fragment from the previous segment
+					if (segDir[iCurr] >= 0) {
+						// calculate error for TRAILING(iNext) seam
+						let dx = (contourX[iCurr] - fragX[jLastPrev]);
+						let dy = (contourY[iCurr] - fragY[jLastPrev]);
+						const errLastPrev = (dx * dx) + (dy * dy);
+
+						// test if improvement. The next segment would benefit with an export
+						if (errLastPrev < segErr[iCurr] || segDir[iCurr] === +2) {
+							// improvement, export/relocate last fragment to next segment
+
+							// only export if balancing constraints are met
+							// <prevprev> <prev-frag> <curr+frag> <next>
+
+							// previous must comply to its neighbour before
+							const newPrevLen = segLen[iPrev] - fragLen[jLastPrev];
+							const newCurrLen = segLen[iCurr] + fragLen[jLastPrev];
+
+							if (segLen[iPrevPrev] > newPrevLen * maxRatio) {
+								// iPrev would become too small for iPrevPrev, request iPrev to relocate to become larger
+								if (segDir[iPrev] >= 0)
+									segDir[iPrev] = +2;
+								else if (segDir[iPrevPrev] >= 0)
+									segDir[iPrevPrev] = +2;
+							} else if (newCurrLen > segLen[iNext] * maxRatio) {
+								// iCurr would become too large for iNext, request iNext to relocate to become larger
+								if (segDir[iNext] >= 0)
+									segDir[iNext] = +2;
+								else if (segDir[iNextNext] >= 0)
+									segDir[iNextNext] = +2;
+							} else if (newPrevLen * maxRatio >= newCurrLen) {
+								// export/relocate fragment
+								segLen[iPrev] -= fragLen[jLastPrev]; // segment grows (sDir[] > 0)
+								segLen[iCurr] += fragLen[jLastPrev];
+								segI[iCurr] = jLastPrev;
+								segDir[iCurr] = +1;
+								segErr[iCurr] = errLastPrev;
+								changed = true;
+								this.numRelocate++;
+							}
+						}
+					}
+				}
+
+				// contribute selected error to result
+				totalError += segErr[iCurr];
+			}
 		} while (changed);
-
-
-		// validate segment length
-		for (let i = 0; i < sN; i++) {
-			const iPlus1 = (i + 1) % sN;
-
-			let len = 0;
-			for (let k = segI[i]; k !== segI[iPlus1]; k = (k + 1) % fN)
-				len += fragLen[k];
-
-			if (Math.abs((len - segLen[i])) > 1e-10)
-				console.log("ERROR3: " + i + " " + (len - segLen[i]));
-		}
 
 		return totalError;
 	}
@@ -718,7 +821,6 @@ function Curve() {
 			// initial compare contour/curve.
 			// NOTE: Need to call to update FCOEF
 			this.compareInit(this.contourX.length * this.ratioCompare, this.contourX, this.contourY);
-			this.totalError = this.compare();
 		}
 	}
 
@@ -796,7 +898,6 @@ function Curve() {
 			// initial compare contour/curve.
 			// NOTE: Need to call to update FCOEF
 			this.compareInit(this.contourX.length * this.ratioCompare, this.contourX, this.contourY);
-			this.totalError = this.compare();
 		}
 
 		/*
@@ -821,13 +922,19 @@ function Curve() {
 		const contourY = this.contourY;
 		const ms = Date.now();
 
+		/*
+		 * Core part:
+		 *
+		 * Move each on-curve control point slightly in all directions to find a better contour fit.
+		 */
+
 		// update current control point
 		for (let dx = -1; dx <= +1; dx++) {
 			for (let dy = -1; dy <= +1; dy++) {
 				if (dx || dy) {
 					// tweak curve
-					AX[this.pt] += dx * this.radius;
-					AY[this.pt] += dy * this.radius;
+					AX[this.pt] += dx;
+					AY[this.pt] += dy;
 					this.calcControlsClosed(AX, BX, CX);
 					this.calcControlsClosed(AY, BY, CY);
 					this.updateControls();
@@ -835,29 +942,21 @@ function Curve() {
 					// determine effect of change
 					let err = this.compare();
 
-					if (err < this.totalError) {
+					if (err < this.bestError) {
 						// effectuate immediately, continue directional scan
-						this.totalError = err;
-						this.radius = 1;
+						this.bestError = err;
 						this.changed++;
 					} else {
 						// undo change
-						this.AX[this.pt] -= dx * this.radius;
-						this.AY[this.pt] -= dy * this.radius;
+						AX[this.pt] -= dx;
+						AY[this.pt] -= dy;
 					}
 				}
 			}
 		}
-		// console.log("$"); process.exit();
-
-		// console.log(JSON.stringify({ms: Date.now(), frame: this.frameNr, totalError: this.totalError, pt: this.pt, numCompare: this.numCompare}));
-
-
-		// if (this.radius <= this.maxRadius) {
-		// 	this.radius++;
-		// 	return 0; // call again. wait 0ms.
-		// }
-		// this.radius = 1;
+		this.calcControlsClosed(AX, BX, CX);
+		this.calcControlsClosed(AY, BY, CY);
+		this.updateControls();
 
 		// bump control point
 		this.pt++;
@@ -866,14 +965,73 @@ function Curve() {
 		// wrap
 		this.pt = 0;
 
+		/*
+		 * Core part:
+		 *
+		 * Give all on-curve control points a slight nudge to escape a possible local minimum.
+		 * Do in such a way that is least disruptive:
+		 * Pull all control points slightly to the center
+		 */
+
+		/*
+		 * If an improvement was found, keep moving and make another round.
+		 * NOTE: all state settings must have been reset, ready for the next round (being: `pt=0`)/
+		 */
 		if (this.changed) {
 			this.changed = 0;
 			return 2; // call again, frame complete
 		}
 
+		if (this.bestError < this.grandError) {
+			this.grandError = this.bestError;
+			this.grandAX = this.AX.slice();
+			this.grandAY = this.AY.slice();
+
+			// find the center
+			let avgX = 0;
+			let avgY = 0;
+			for (let i = 0; i < bN; i++) {
+				avgX += AX[i];
+				avgY += AY[i];
+			}
+			avgX /= bN;
+			avgY /= bN;
+
+			// nudge controls
+			for (let i = 0; i < bN; i++) {
+				AX[i] = Math.trunc((AX[i] - avgX) * this.rescale + avgX);
+				AY[i] = Math.trunc((AY[i] - avgY) * this.rescale + avgY);
+			}
+			this.calcControlsClosed(AX, BX, CX);
+			this.calcControlsClosed(AY, BY, CY);
+			this.updateControls();
+
+			// clear compare flow direction
+			for (let i = 0; i < this.segDir.length; i++)
+				this.segDir[i] = 0;
+
+			this.bestError = this.compare();
+
+			return 3;
+		}
+
+		// rewind to last grandError.
+		// NOTE: this code was intended to jump out of a local minimum, puzzeled that it can make the situation much more worse.
+		for (let i=0; i<bN; i++) {
+			AX[i] = this.grandAX[i];
+			AY[i] = this.grandAY[i];
+		}
+		this.calcControlsClosed(AX, BX, CX);
+		this.calcControlsClosed(AY, BY, CY);
+		this.updateControls();
+		this.bestError = this.grandError;
+		/*
+		 * Higher level scenarios here
+		 * For example: deletion (or addition) of on-curve control points;
+		 */
+
 		return 0; // nothing changed
 	};
-
 }
 
 function setup(curve, width, height) {
@@ -900,12 +1058,10 @@ function setup(curve, width, height) {
 	// initial compare contour/curve
 	curve.compareInit(curve.contourX.length * curve.ratioCompare, curve.contourX, curve.contourY);
 
-	curve.totalError = curve.compare();
-
 }
 
 /*
- * The following is a `replayLog` player.
+ * The following is a `replayLog` player for nodejs.
  * Convert the frames to mp4 with:
  *	ffmpeg -r 25 -i resize-%03d.png  -c:v libx264 -preset slow -crf 22 -profile:v baseline -level 3.0 -movflags +faststart -pix_fmt yuv420p -an resize.mp4
  *	/bin/rm resize-[0-9][0-9][0-9].png
@@ -953,16 +1109,12 @@ if (typeof window === "undefined") {
 		curve.calcControlsClosed(curve.AY, curve.BY, curve.CY);
 		// prepare compare
 		curve.compareInit(curve.contourX.length * curve.ratioCompare, curve.contourX, curve.contourY);
-		curve.totalError = curve.compare();
 
 		// clear frame
 		ctx.fillStyle = "#eee"
 		ctx.fillRect(0, 0, width, height);
 		// draw frame
-		curve.drawCompare(ctx);
-		curve.drawContour(ctx, curve.contourX, curve.contourY, "#f00");
-		curve.drawCurve(ctx, "#00f");
-		curve.drawCurvePoints(ctx, 5, "#f00");
+		curve.draw(ctx);
 
 		ctx.beginPath();
 		ctx.strokeStyle = "#000";
@@ -993,10 +1145,7 @@ if (typeof window === "undefined") {
 			ctx.fillRect(0, 0, width, height);
 
 			// draw frame
-			curve.drawCompare(ctx);
-			curve.drawContour(ctx, curve.contourX, curve.contourY, "#f00");
-			curve.drawCurve(ctx, "#00f");
-			curve.drawCurvePoints(ctx, 5, "#f00");
+			curve.draw(ctx);
 
 			ctx.beginPath();
 			ctx.strokeStyle = "#000";

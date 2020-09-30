@@ -322,7 +322,7 @@ let AY = <span id="txtAY"></span>;
 					let ret = followCurve.tick();
 
 					// update stats
-					txtStatus.set("text", "diff=" + followCurve.totalError + " numCompare=" + followCurve.numCompare);
+					txtStatus.set("text", "diff=" + followCurve.bestError + " numCompare=" + followCurve.numCompare + " numRelocate=" + followCurve.numRelocate);
 
 					if (ret) {
 						// call again
@@ -447,10 +447,7 @@ let AY = <span id="txtAY"></span>;
 			ctx.fillRect(0, 0, width, height);
 			if (slider.isDragging) {
 				// contour matching
-				followCurve.drawCompare(ctx);
-				followCurve.drawContour(ctx, followCurve.contourX, followCurve.contourY, "#f00");
-				followCurve.drawCurve(ctx, "#00f");
-				followCurve.drawCurvePoints(ctx, 2, "#00f");
+				followCurve.draw(ctx);
 			} else {
 				// simple curve with pad elements
 				followCurve.drawCurve(ctx, "#00f");

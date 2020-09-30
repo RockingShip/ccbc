@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-09-30 12:16:23 Improved `compare()` for `docs/resize`.
 2020-09-30 10:22:19 Player for `replayLog`.
 2020-09-29 12:56:46 Drop `docs/resize` dysfunctional radius and replace with resizing to center.
 2020-09-28 23:44:34 DOM optimisations `docs/animated`.
