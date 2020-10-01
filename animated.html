@@ -221,11 +221,17 @@ const c3 = -3.0 / 11.0;
 const c4 =  1;
 
 // calculate B[] control points
-for (let i = 0; i < N; i++) {
-	B[i].x = A[(i + 1) % N].x * c0 + A[(i + 2) % N].x * c1 + A[(i + 3) % N].x * c2 + A[(i + 4) % N].x * c3 + A[i].x * c4;
-	B[i].y = A[(i + 1) % N].y * c0 + A[(i + 2) % N].y * c1 + A[(i + 3) % N].y * c2 + A[(i + 4) % N].y * c3 + A[i].y * c4;
-}
-
+let B = [
+  { x: A[1].x*c0 + A[2].x*c1 + A[3].x*c2 + A[4].x*c3 + A[0].x*c4 ,
+    y: A[1].y*c0 + A[2].y*c1 + A[3].y*c2 + A[4].y*c3 + A[0].y*c4 },
+  { x: A[2].x*c0 + A[3].x*c1 + A[4].x*c2 + A[0].x*c3 + A[1].x*c4 ,
+    y: A[2].y*c0 + A[3].y*c1 + A[4].y*c2 + A[0].y*c3 + A[1].y*c4 },
+  { x: A[3].x*c0 + A[4].x*c1 + A[0].x*c2 + A[1].x*c3 + A[2].x*c4 ,
+    y: A[3].y*c0 + A[4].y*c1 + A[0].y*c2 + A[1].y*c3 + A[2].y*c4 },
+  { x: A[4].x*c0 + A[0].x*c1 + A[1].x*c2 + A[2].x*c3 + A[3].x*c4 ,
+    y: A[4].y*c0 + A[0].y*c1 + A[1].y*c2 + A[2].y*c3 + A[3].y*c4 },
+  { x: A[0].x*c0 + A[1].x*c1 + A[2].x*c2 + A[3].x*c3 + A[4].x*c4 ,
+    y: A[0].y*c0 + A[1].y*c1 + A[2].y*c2 + A[3].y*c3 + A[4].y*c4 } ];
 
 // mirror to C[] control point
 for (let i = 0; i < 5; i++) {
