@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ```
+2020-10-01 11:46:55 Relocated `embed.*` to project `https://github.com/xyzzy/scripted-svg`.
 2020-10-01 11:25:52 Move GitHub-pages to project root.
 2020-09-30 17:58:00 Cleanup and created new 400x400 previews.
 2020-09-28 23:44:34 Cleanup `animated`.
