@@ -21,7 +21,7 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8">
 	<link rel="shortcut icon" type="image/svg" href="favicon.svg"/>
@@ -80,7 +80,7 @@
 	<div class="knob"></div>
 </div>
 <span id="numControls"></span>
-<button id="butMode"><b>VISUAL</b>/<strike>precise</strike></button>
+<button id="butMode"><b>VISUAL</b>/<s>precise</s></button>
 
 <div id="wrapper">
 	<canvas id="animated"></canvas>
@@ -101,12 +101,12 @@ let AY = <span id="txtAY"></span>;
 <p>"Visual/precise" changes how/where control points are added/removed.</p>
 <p>You can also choose to copy/store/save the replay log below:</p>
 <textarea id="txtReplayLog" rows="3" cols="10"></textarea>
-<button id="butReplay"><b>STOP</b>/<strike>play</strike></button>
+<button id="butReplay"><b>STOP</b>/<s>play</s></button>
 <div id="txtReplayStatus"></div>
 
 
 <script type="text/javascript">
-
+	"use strict";
 	window.addEvent("domready", function () {
 
 		/*
@@ -196,9 +196,9 @@ let AY = <span id="txtAY"></span>;
 		 */
 		butMode.updateLabel = function () {
 			if (visualPrecise) {
-				butMode.set("html", "<b>VISUAL</b>/<strike>precise</strike>");
+				butMode.set("html", "<b>VISUAL</b>/<s>precise</s>");
 			} else {
-				butMode.set("html", "<strike>visual</strike>/<b>PRECISE</b>");
+				butMode.set("html", "<s>visual</s>/<b>PRECISE</b>");
 			}
 		};
 		butMode.addEvent("click", function () {
@@ -465,9 +465,9 @@ let AY = <span id="txtAY"></span>;
 		 */
 		butReplay.updateLabel = function () {
 			if (stopPlay) {
-				butReplay.set("html", "<b>STOP</b>/<strike>play</strike>");
+				butReplay.set("html", "<b>STOP</b>/<s>play</s>");
 			} else {
-				butReplay.set("html", "<strike>stop</strike>/<b>PLAY</b>");
+				butReplay.set("html", "<s>stop</s>/<b>PLAY</b>");
 			}
 		};
 		butReplay.addEvent("click", function () {

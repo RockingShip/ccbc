@@ -21,7 +21,7 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8">
 	<link rel="shortcut icon" type="image/svg" href="favicon.svg">
@@ -59,7 +59,7 @@
 <p>Interactive demonstration on how a closed path is calculated and plotted.</p>
 <p>Move the black dots on the blue line with your mouse/finger.</p>
 
-<button id="butMode"><b>ANIMATED</b>/<strike>vanilla</strike></button>
+<button id="butMode"><b>ANIMATED</b>/<s>vanilla</s></button>
 
 <div id="wrapper">
 	<canvas id="animated"></canvas>
@@ -146,7 +146,7 @@
 					document.id('txtB').set('text', JSON.encode(curve.B));
 				}
 			});
-			dots[i].addEvent('mouseup', function (event) {
+			dots[i].addEvent('mouseup', function () {
 				curel = 0;
 			});
 			dots[i].addEvent('touchstart', function (event) {
@@ -178,7 +178,7 @@
 			if (curel !== 0)
 				curel.fireEvent('mousemove', event);
 		});
-		document.id('svg').addEvent('mouseup', function (event) {
+		document.id('svg').addEvent('mouseup', function () {
 			curel = 0;
 		});
 		document.id('svg').addEvent('touchmove', function (event) {
@@ -193,9 +193,9 @@
 		 */
 		butMode.updateLabel = function() {
 			if (animatedVanilla) {
-				butMode.set("html", "<b>ANIMATED</b>/<strike>vanilla</strike>");
+				butMode.set("html", "<b>ANIMATED</b>/<s>vanilla</s>");
 			} else {
-				butMode.set("html", "<strike>animated</strike>/<b>VANILLA</b>");
+				butMode.set("html", "<s>animated</s>/<b>VANILLA</b>");
 			}
 		};
 		butMode.addEvent("click", function () {

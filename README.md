@@ -8,22 +8,22 @@ The general issue is that implementations consider it "open", meaning that the s
 Control points are mostly machine generated and far from intuitive.
 Attempts to manually change the curve usually ends in distorting the whole.
 
-This project takes a new approach to Bezier curves considering all sections connected (closed curve).
+This project takes a new approach to Bézier curves considering all sections connected (closed curve).
 Maths drastically simplify, creating B/C control points for plotting is a linear function (instead of matrix solving).
 Intuitive human/curve interaction, control points are no longer off-curve but are actually located on the curve.
 Ultra high speed plotting allows for real-time fitting of curves onto contours (represented as a vector of coordinates).
 
 Samples: (Click image to open interactive version)
 
-## Basic bezier with on-curve control points.
+## Basic Bézier with on-curve control points.
 
 [![Animated](animated-400x400.webp)](https://RockingShip.github.io/ccbc/animated.html)
 
-## Compare between Bezier curve and coordinate vector.
+## Compare between Bézier curve and coordinate vector.
 
 [![Compare](compare-400x400.webp)](https://RockingShip.github.io/ccbc/compare.html)
 
-## Bezier curve with dynamic number of composite sections.
+## Bézier curve with dynamic number of composite sections.
 
 Left in "visual" mode, right in "precise" mode.
 
@@ -47,4 +47,4 @@ This project is licensed under the GNU AFFERO General Public License v3 - see th
 
 ## Acknowledgments
 
-* Pierre Étienne Bézier and his amazing work on what is now known as Bézier curves.
+* Pierre �tienne Bézier and his amazing work on what is now known as Bézier curves.

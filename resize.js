@@ -402,7 +402,6 @@ function Curve() {
 		const fragX = this.fragX;
 		const fragY = this.fragY;
 		const segI = this.segI;
-		const segDir = this.segDir;
 		const segLen = this.segLen;
 		const segErr = this.segErr;
 		const sN = segLen.length;
@@ -447,9 +446,7 @@ function Curve() {
 	 * Call this to setup progressive compare
 	 */
 	this.compareInit = function (numFragments, contourX, contourY) {
-		const AX = this.AX;
-		const AY = this.AY;
-		const bN = AX.length; // number of bezier sections
+		const bN = this.AX.length; // number of bezier sections
 		const sN = contourX.length; // number of contour segments
 		const segI = this.segI;
 		const segDir = this.segDir;
@@ -461,7 +458,7 @@ function Curve() {
 		// go through loop in case there might be rounding errors to excessive additions
 		numFragments = 0;
 		for (let i = 0, k = 0; i < bN; i++)
-			for (let t = 0, x = AX[i], y = AY[i]; t < 1; t += this.dt, k++)
+			for (let t = 0; t < 1; t += this.dt, k++)
 				numFragments++;
 
 		// please don't
@@ -509,13 +506,6 @@ function Curve() {
 	 * Perform progressive compare
 	 */
 	this.compare = function () {
-		const AX = this.AX;
-		const AY = this.AY;
-		const BX = this.BX;
-		const BY = this.BY;
-		const CX = this.CX;
-		const CY = this.CY;
-		const bN = AX.length;
 		const contourX = this.contourX;
 		const contourY = this.contourY;
 		const fragLen = this.fragLen;
@@ -733,7 +723,7 @@ function Curve() {
 			const dt = this.dt;
 			const bN = AX.length;
 
-			let bestLen = 0, bestI, bestX, bestY;
+			let bestLen = 0, bestI = 0, bestX = 0, bestY = 0;
 			let t, x, y;
 
 			// find best section and it's halfway point
@@ -786,8 +776,8 @@ function Curve() {
 			}
 
 			// insert best after bestI
-			this.AX.splice((bestI + 1) % bN, 0, bestX);
-			this.AY.splice((bestI + 1) % bN, 0, bestY);
+			AX.splice((bestI + 1) % bN, 0, bestX);
+			AY.splice((bestI + 1) % bN, 0, bestY);
 
 			// set initial control points
 			this.calcControlsClosed(this.AX, this.BX, this.CX);
@@ -815,7 +805,7 @@ function Curve() {
 			const dt = this.dt;
 			const bN = AX.length;
 
-			let bestLen = 0, bestI, bestX, bestY;
+			let bestLen = 0, bestI = 0;
 			let t, x, y;
 
 			// find best double section (this can be optimised)
@@ -863,8 +853,8 @@ function Curve() {
 			}
 
 			// insert best after bestI
-			this.AX.splice(bestI, 1);
-			this.AY.splice(bestI, 1);
+			AX.splice(bestI, 1);
+			AY.splice(bestI, 1);
 
 			// set initial control points
 			this.calcControlsClosed(this.AX, this.BX, this.CX);
@@ -893,9 +883,6 @@ function Curve() {
 		const CX = this.CX;
 		const CY = this.CY;
 		const bN = AX.length;
-		const contourX = this.contourX;
-		const contourY = this.contourY;
-		const ms = Date.now();
 
 		/*
 		 * Core part:
