@@ -1,4 +1,4 @@
-# Welcome to Closed Continuous Bézier Curves (recalculated).
+# Welcome to the Wonderful World of Closed Continuous Bézier Curves (recalculated).
 
 This repo is a mess because it is preliminary.
 Collecting and constructing materials, documentation and samples.
@@ -15,15 +15,19 @@ Ultra high speed plotting allows for real-time fitting of curves onto contours (
 
 Samples: (Click image to open interactive version)
 
-## Basic Bézier with on-curve control points.
+## Basic Bézier with on-curve control points
 
 [![Animated](animated-400x400.webp)](https://RockingShip.github.io/ccbc/animated.html)
 
-## Compare between Bézier curve and coordinate vector.
+## Remastered curve with 10 control points
+
+[![Remastered](remastered-400x400.webp)](https://RockingShip.github.io/ccbc/remastered.html)
+
+## Compare between Bézier curve and coordinate vector
 
 [![Compare](compare-400x400.webp)](https://RockingShip.github.io/ccbc/compare.html)
 
-## Bézier curve with dynamic number of composite sections.
+## Bézier curve with dynamic number of composite sections
 
 Left in "visual" mode, right in "precise" mode.
 
@@ -43,8 +47,8 @@ Using [SemVer](http://semver.org/) for versioning. For the versions available, s
 
 # License
 
-This project is licensed under the GNU AFFERO General Public License v3 - see the [LICENSE.txt](LICENSE.txt) file for details
+This project is licensed under the GNU Affero General Public License v3 - see the [LICENSE.txt](LICENSE.txt) file for details
 
 ## Acknowledgments
 
-* Pierre �tienne Bézier and his amazing work on what is now known as Bézier curves.
+* Pierre Bézier and his amazing work on what is now known as Bézier curves.

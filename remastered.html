@@ -1,0 +1,241 @@
+<!DOCTYPE HTML>
+<!--
+    remastered.html
+
+        Remastered Bézier with 10 on-curve control points
+-->
+<!--
+ *  This file is part of ccbc, Closed Continuous Bézier Curves.
+ *  Copyright (C) 2012, xyzzy@rockingship.org
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+<head>
+        <meta charset="utf-8">
+        <link rel="shortcut icon" type="image/svg" href="favicon.svg"/>
+        <title>Remastered B&eacute;zier with 10 on-curve control points</title>
+        <script src="MooTools-Core-1.6.0.js" type="text/javascript"></script>
+        <script src="MooTools-More-1.6.0.js" type="text/javascript"></script>
+        <style type="text/css">
+                body {
+                        font-family: Verdana, Geneva, sans-serif;
+                }
+                h1, h2, h3, h4, h5 {
+                        text-align: center;
+                }
+                div {
+                        position: relative;
+                }
+                svg {
+                        background-color: #00000000; /* NOTE: alpha=0 */
+                        -webkit-touch-callout: none;
+                        -webkit-user-select: none;
+                        -moz-user-select: none;
+                        -ms-user-select: none;
+                        user-select: none;
+                }
+                canvas {
+                        position: absolute;
+                        z-index: -1;
+                }
+        </style>
+</head>
+
+<body >
+<h1 align="center">Remastered B&eacute;zier with 10 on-curve control points</h1>
+<p align="center"><b>On-curve control points</b></p>
+<p>Move the red pads with your mouse.</p>
+<p>The green lines are where the traditional off-curve control points would be located.</p>
+<svg id="svg" width="500px" height="500px" style="background-color: #eee;">
+  <ellipse id="pad1" ry="10" rx="10" cy="50" cx="50" stroke-width="2" stroke="none" fill="#f00" />
+  <ellipse id="pad2" ry="10" rx="10" cy="50" cx="100" stroke-width="2" stroke="none" fill="#f00"/>
+  <ellipse id="pad3" ry="10" rx="10" cy="100" cx="150" stroke-width="2" stroke="none" fill="#f00" />
+  <ellipse id="pad4" ry="10" rx="10" cy="100" cx="100" stroke-width="2" stroke="none" fill="#f00"/>
+  <ellipse id="pad5" ry="10" rx="10" cy="75" cx="75" stroke-width="2" stroke="none" fill="#f00" />
+  <ellipse id="pad6" ry="10" rx="10" cy="65" cx="75" stroke-width="2" stroke="none" fill="#f00" />
+  <ellipse id="pad7" ry="10" rx="10" cy="55" cx="75" stroke-width="2" stroke="none" fill="#f00" />
+  <ellipse id="pad8" ry="10" rx="10" cy="45" cx="75" stroke-width="2" stroke="none" fill="#f00" />
+  <ellipse id="pad9" ry="10" rx="10" cy="35" cx="75" stroke-width="2" stroke="none" fill="#f00" />
+  <ellipse id="padA" ry="10" rx="10" cy="25" cx="75" stroke-width="2" stroke="none" fill="#f00" />
+  <path id="hint" d="" stroke-width="2" stroke="#0f0" fill="none" style="pointer-events:none;" />
+  <path id="path" d="" stroke-width="2" stroke="#00f" fill="none" style="pointer-events:none;" />
+</svg>
+<div id="txt"></div>
+
+<script type="text/javascript">
+        window.addEvent('domready', function () {
+                let x0 = 0, y0 = 0, elx = -1, ely = -1;
+                let curel = 0;
+
+                let m = 10;
+
+
+                let _ = this;
+                _.calc = function () {
+
+                        // load path points
+                        let A = [];
+                        for (let i = 0; i < m; i++) {
+                                A[i] = {x: pads[i].get('cx') * 1, y: pads[i].get('cy') * 1};
+                                $('txtA').set('text', JSON.encode(A));
+                        }
+
+                        // coefficients for a 10 point closed path
+                        let coef = [56.0 / 209.0, -15.0 / 209.0, 4.0 / 209.0, -1.0 / 209.0, 0, 1.0 / 209.0, -4.0 / 209.0, 15.0 / 209.0, -56.0 / 209.0, 1];
+
+                        // determine first control point
+                        let B = [];
+                        for (let i = 0; i < m; i++) {
+                                let x = 0;
+                                let y = 0;
+                                for (let j = 0; j < m; j++) {
+                                        x += A[(i + j + 1) % m].x * coef[j];
+                                        y += A[(i + j + 1) % m].y * coef[j];
+                                }
+                                B[i] = {x: x, y: y};
+                        }
+
+                        // snap to grid
+                        for (let i = 0; i < m; i++)
+                                B[i] = {x: Math.round(B[i].x), y: Math.round(B[i].y)};
+                        $('txtB').set('text', JSON.encode(B));
+
+                        // mirror to second control point (only needed for encoded path string)
+                        let C = [];
+                        for (let i = 0; i < m - 1; i++)
+                                C[i] = {x: 2 * A[i + 1].x - B[i + 1].x, y: 2 * A[i + 1].y - B[i + 1].y};
+                        C[m - 1] = {x: 2 * A[0].x - B[0].x, y: 2 * A[0].y - B[0].y};
+
+                        // create layer that displays path
+                        let d;
+                        d =
+                                'M ' + A[0].x + ',' + A[0].y + 'C ' + B[0].x + ',' + B[0].y + ' ' + C[0].x + ',' + C[0].y + ' ' + A[1].x + ',' + A[1].y +
+                                'C ' + B[1].x + ',' + B[1].y + ' ' + C[1].x + ',' + C[1].y + ' ' + A[2].x + ',' + A[2].y +
+                                'C ' + B[2].x + ',' + B[2].y + ' ' + C[2].x + ',' + C[2].y + ' ' + A[3].x + ',' + A[3].y +
+                                'C ' + B[3].x + ',' + B[3].y + ' ' + C[3].x + ',' + C[3].y + ' ' + A[4].x + ',' + A[4].y +
+                                'C ' + B[4].x + ',' + B[4].y + ' ' + C[4].x + ',' + C[4].y + ' ' + A[5].x + ',' + A[5].y +
+                                'C ' + B[5].x + ',' + B[5].y + ' ' + C[5].x + ',' + C[5].y + ' ' + A[6].x + ',' + A[6].y +
+                                'C ' + B[6].x + ',' + B[6].y + ' ' + C[6].x + ',' + C[6].y + ' ' + A[7].x + ',' + A[7].y +
+                                'C ' + B[7].x + ',' + B[7].y + ' ' + C[7].x + ',' + C[7].y + ' ' + A[8].x + ',' + A[8].y +
+                                'C ' + B[8].x + ',' + B[8].y + ' ' + C[8].x + ',' + C[8].y + ' ' + A[9].x + ',' + A[9].y +
+                                'C ' + B[9].x + ',' + B[9].y + ' ' + C[9].x + ',' + C[9].y + ' ' + A[0].x + ',' + A[0].y +
+                                'z';
+                        // shorter string
+                        d =
+                                'M ' + A[0].x + ',' + A[0].y + 'C ' + B[0].x + ',' + B[0].y + ' ' + C[0].x + ',' + C[0].y + ' ' + A[1].x + ',' + A[1].y +
+                                'S ' + C[1].x + ',' + C[1].y + ' ' + A[2].x + ',' + A[2].y +
+                                'S ' + C[2].x + ',' + C[2].y + ' ' + A[3].x + ',' + A[3].y +
+                                'S ' + C[3].x + ',' + C[3].y + ' ' + A[4].x + ',' + A[4].y +
+                                'S ' + C[4].x + ',' + C[4].y + ' ' + A[5].x + ',' + A[5].y +
+                                'S ' + C[5].x + ',' + C[5].y + ' ' + A[6].x + ',' + A[6].y +
+                                'S ' + C[6].x + ',' + C[6].y + ' ' + A[7].x + ',' + A[7].y +
+                                'S ' + C[7].x + ',' + C[7].y + ' ' + A[8].x + ',' + A[8].y +
+                                'S ' + C[8].x + ',' + C[8].y + ' ' + A[9].x + ',' + A[9].y +
+                                'S ' + C[9].x + ',' + C[9].y + ' ' + A[0].x + ',' + A[0].y +
+                                'z';
+                        $('path').set('d', d);
+
+                        // create layer that displays control points
+                        d =
+                                'M ' + A[1].x + ',' + A[1].y + 'L ' + B[1].x + ',' + B[1].y + 'L ' + C[0].x + ',' + C[0].y + 'z' +
+                                'M ' + A[2].x + ',' + A[2].y + 'L ' + B[2].x + ',' + B[2].y + 'L ' + C[1].x + ',' + C[1].y + 'z' +
+                                'M ' + A[3].x + ',' + A[3].y + 'L ' + B[3].x + ',' + B[3].y + 'L ' + C[2].x + ',' + C[2].y + 'z' +
+                                'M ' + A[4].x + ',' + A[4].y + 'L ' + B[4].x + ',' + B[4].y + 'L ' + C[3].x + ',' + C[3].y + 'z' +
+                                'M ' + A[5].x + ',' + A[5].y + 'L ' + B[5].x + ',' + B[5].y + 'L ' + C[4].x + ',' + C[4].y + 'z' +
+
+                                'M ' + A[6].x + ',' + A[6].y + 'L ' + B[6].x + ',' + B[6].y + 'L ' + C[5].x + ',' + C[5].y + 'z' +
+                                'M ' + A[7].x + ',' + A[7].y + 'L ' + B[7].x + ',' + B[7].y + 'L ' + C[6].x + ',' + C[6].y + 'z' +
+                                'M ' + A[8].x + ',' + A[8].y + 'L ' + B[8].x + ',' + B[8].y + 'L ' + C[7].x + ',' + C[7].y + 'z' +
+                                'M ' + A[9].x + ',' + A[9].y + 'L ' + B[9].x + ',' + B[9].y + 'L ' + C[8].x + ',' + C[8].y + 'z' +
+                                'M ' + A[0].x + ',' + A[0].y + 'L ' + B[0].x + ',' + B[0].y + 'L ' + C[9].x + ',' + C[9].y + 'z'
+                        ;
+                        $('hint').set('d', d);
+                };
+
+                // get the pads
+                let pads = [document.id('pad1'), document.id('pad2'), document.id('pad3'), document.id('pad4'), document.id('pad5'),
+                        document.id('pad6'), document.id('pad7'), document.id('pad8'), document.id('pad9'), document.id('padA')];
+
+                // initial position
+                let A = [{"x": 303, "y": 478}, {"x": 159, "y": 218}, {"x": 467, "y": 266}, {"x": 183, "y": 324}, {"x": 323, "y": 18}, {"x": 287, "y": 326},
+                        {"x": 67, "y": 84}, {"x": 317, "y": 212}, {"x": 35, "y": 372}, {"x": 227, "y": 154}];
+                for (let i = 0; i < m; i++) {
+                        pads[i].set('cx', A[i].x);
+                        pads[i].set('cy', A[i].y);
+                }
+                // calculate+display
+                _.calc();
+
+                // attach mouse events
+                for (let i = 0; i < m; i++) {
+                        pads[i].addEvent('mousedown', function (event) {
+                                event.stop();
+                                x0 = event.client.x;
+                                y0 = event.client.y;
+                                elx = this.get('cx') * 1;
+                                ely = this.get('cy') * 1;
+                                curel = this;
+                        });
+                        pads[i].addEvent('mouseup', function (event) {
+                                curel = 0;
+                                _.calc();
+                        });
+                        pads[i].addEvent('mousemove', function (event) {
+                                if (curel !== 0) {
+                                        this.set('cx', elx + event.client.x - x0);
+                                        this.set('cy', ely + event.client.y - y0);
+                                        _.calc();
+                                }
+                        });
+                }
+
+                // container mousemove handler (in case mouse moves outside pad during gesture)
+                document.id('svg').addEvent('mousemove', function (event) {
+                        if (curel !== 0) {
+                                curel.fireEvent('mousemove', event);
+                        }
+                });
+                document.id('svg').addEvent('mouseup', function (event) {
+                        curel = 0;
+                });
+
+        });
+</script>
+
+<pre>
+// array of points that lie on the Bezier path
+let A = <span id="txtA"></span>;
+// resulting control points conveniently located here
+//  B = <span id="txtB"></span>;
+
+// coefficients for a 10 point closed path
+let coef = [ 56.0/209.0, -15.0/209.0, 4.0/209.0, -1.0/209.0, 0, 1.0/209.0, -4.0/209.0, 15.0/209.0, -56.0/209.0, 1 ];
+
+// determine first control point
+let m = 10;
+let B = [];
+for (let i=0; i&lt;m; i++) {
+    let x = 0;
+    let y = 0;
+    for (let j=0; j&lt;m; j++) {
+        x += A[(i+j+1)%m].x * coef[j];
+        y += A[(i+j+1)%m].y * coef[j];
+    }
+    B[i] = { x: x, y: y };
+}
+</pre>
+
+</body>
+</html>
