@@ -1,4 +1,16 @@
-# Welcome to the Wonderful World of Closed Continuous Bézier Curves (recalculated).
+---
+layout: redirect
+title: "ccbc - Closed Continuous Bézier Curves (remastered)"
+image: assets/favimage-472x472.jpg
+---
+
+## Work-In-Progress
+
+# ccbc
+
+Closed Continuous Bézier Curves (remastered)
+
+### Welcome to the Wonderful World of user friendly Bézier Curves.
 
 This repo is a mess because it is preliminary.
 Collecting and constructing materials, documentation and samples.
@@ -17,35 +29,39 @@ Samples: (Click image to open interactive version)
 
 ## Basic Bézier with on-curve control points
 
-[![Animated](animated-400x400.webp)](https://RockingShip.github.io/ccbc/animated.html)
+[![Animated](animated-400x400.webp)](animated.html)
 
 ## Remastered curve with 10 control points
 
-[![Remastered](remastered-400x400.webp)](https://RockingShip.github.io/ccbc/remastered.html)
+[![Remastered](remastered-400x400.webp)](remastered.html)
 
 ## Compare between Bézier curve and coordinate vector
 
-[![Compare](compare-400x400.webp)](https://RockingShip.github.io/ccbc/compare.html)
+[![Compare](compare-400x400.webp)](compare.html)
 
 ## Bézier curve with dynamic number of composite sections
 
 Left in "visual" mode, right in "precise" mode.
 
-[![Resize](resize-400x400.webp)](https://RockingShip.github.io/ccbc/resize.html)
+[![Resize](resize-400x400.webp)](resize.html)
 
-# Requirements
+## Requirements
 
 *   mootools for DOM/javascript connectivity (included)
 
-# Installation
+## Source code
 
-This is a self supporting repository and has no explicit build instructions.
+Grab one of the tarballs at [https://github.com/xyzzy/smile/releases](https://github.com/RockingShip/ccbc/releases) or checkout the latest code:
 
-# Versioning
+```sh
+  git clone https://github.com/xyzzy/smile.git
+```
+
+## Versioning
 
 Using [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/RockingShip/ccbc/tags).
 
-# License
+## License
 
 This project is licensed under the GNU Affero General Public License v3 - see the [LICENSE.txt](LICENSE.txt) file for details
 

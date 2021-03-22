@@ -1,0 +1,19 @@
+navbar_entries:
+  - title: "showcase"
+    url: https://rockingship.github.io
+
+  - title: "RockingShip@github"
+    url: https://github.com/RockingShip
+
+  - title: "ccbc@github"
+    url: https://github.com/RockingShip/ccbc
+
+footer_entries:
+  - title: "showcase"
+    url: https://rockingship.github.io
+
+  - title: "RockingShip@github"
+    url: https://github.com/RockingShip
+
+  - title: "ccbc@github"
+    url: https://github.com/RockingShip/ccbc
