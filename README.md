@@ -25,28 +25,30 @@ Maths drastically simplify, creating B/C control points for plotting is a linear
 Intuitive human/curve interaction, control points are no longer off-curve but are actually located on the curve.
 Ultra high speed plotting allows for real-time fitting of curves onto contours (represented as a vector of coordinates).
 
-Samples: (Click image to open interactive version)
-
 ## Calculating coefficients
 
-[NOTES-coefficients](NOTES-coefficients.md)
+[NOTES-coefficients.md](NOTES-coefficients.md)
 
 ## Basic Bézier with on-curve control points
 
+\[click on the image to start the demonstration\]  
 [![Animated](animated-400x400.webp)](animated.html)
 
 ## Remastered curve with 10 control points
 
+\[click on the image to start the demonstration\]  
 [![Remastered](remastered-400x400.webp)](remastered.html)
 
 ## Compare between Bézier curve and coordinate vector
 
+\[click on the image to start the demonstration\]  
 [![Compare](compare-400x400.webp)](compare.html)
 
 ## Bézier curve with dynamic number of composite sections
 
 Left in "visual" mode, right in "precise" mode.
 
+\[click on the image to start the demonstration\]  
 [![Resize](resize-400x400.webp)](resize.html)
 
 ## Requirements

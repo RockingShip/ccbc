@@ -1,5 +1,5 @@
 navbar_entries:
-  - title: "showcase"
+  - title: "showcase@RockingShip"
     url: https://rockingship.github.io
 
   - title: "ccbc@github"
@@ -9,7 +9,7 @@ navbar_entries:
     url: https://github.com/RockingShip
 
 footer_entries:
-  - title: "showcase"
+  - title: "showcase@RockingShip"
     url: https://rockingship.github.io
 
   - title: "ccbc@github"
