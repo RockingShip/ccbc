@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ```
+2021-03-22 23:01:22 Changed: Item order in navbar.
 2021-03-22 22:30:24 Added: captions for teasers.
 2021-03-22 21:11:40 Changed: Modernized SEO headers.
 2021-03-22 20:53:07 Added: `moonwalk` theme.
