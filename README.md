@@ -1,5 +1,5 @@
 ---
-layout: redirect
+layout: home
 title: "ccbc - Closed Continuous Bézier Curves (remastered)"
 image: assets/favimage-472x472.jpg
 ---
@@ -26,6 +26,10 @@ Intuitive human/curve interaction, control points are no longer off-curve but ar
 Ultra high speed plotting allows for real-time fitting of curves onto contours (represented as a vector of coordinates).
 
 Samples: (Click image to open interactive version)
+
+## Calculating coefficients
+
+[NOTES-coefficients](NOTES-coefficients.md)
 
 ## Basic Bézier with on-curve control points
 
