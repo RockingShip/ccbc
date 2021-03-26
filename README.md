@@ -10,6 +10,9 @@ image: assets/favimage-472x472.jpg
 
 Closed Continuous Bézier Curves (remastered)
 
+Instead of an ad with tracking...  
+Like to [donate ![opencollective](assets/opencollective-icon.svg)](https://opencollective.com/RockingShip) some appreciation for the use or inspiration this gives you?
+
 ### Welcome to the Wonderful World of user friendly Bézier Curves.
 
 This repo is a mess because it is preliminary.

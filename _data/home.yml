@@ -2,12 +2,12 @@ navbar_entries:
   - title: "showcase"
     url: https://rockingship.github.io
 
-  - title: "ccbc@github"
+  - title: "ccbc <div class=\"GitHub-mark\"></div>"
     url: https://github.com/RockingShip/ccbc
 
 footer_entries:
   - title: "showcase"
     url: https://rockingship.github.io
 
-  - title: "ccbc@github"
+  - title: "ccbc <div class=\"GitHub-mark\"></div>"
     url: https://github.com/RockingShip/ccbc
