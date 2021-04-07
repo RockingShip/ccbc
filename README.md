@@ -60,10 +60,10 @@ Left in "visual" mode, right in "precise" mode.
 
 ## Source code
 
-Grab one of the tarballs at [https://github.com/xyzzy/smile/releases](https://github.com/RockingShip/ccbc/releases) or checkout the latest code:
+Grab one of the tarballs at [https://github.com/xyzzy/ccbc/releases](https://github.com/RockingShip/ccbc/releases) or checkout the latest code:
 
 ```sh
-  git clone https://github.com/xyzzy/smile.git
+  git clone https://github.com/xyzzy/ccbc.git
 ```
 
 ## Versioning
